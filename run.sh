@@ -18,13 +18,16 @@ finally:
     s.close()
 ")
 
+# Deteksi Master Key Admin dari database atau env
+MASTER_KEY=$(python3 -c "import database; print(database.get_admin_master_key())" 2>/dev/null || echo "${ADMIN_MASTER_KEY:-admin123}")
+
 echo "=========================================================="
 echo "    OFFLINE SQL EXAM SYSTEM (PRAKTIKUM BASIS DATA)        "
 echo "=========================================================="
 echo "Status Jaringan   : Siap (Offline Local Network)"
 echo "Akses Mahasiswa   : http://${HOST_IP}:8000"
 echo "Akses Dosen/Admin : http://localhost:8000/admin"
-echo "Master Key Admin  : admin123"
+echo "Master Key Admin  : ${MASTER_KEY}"
 echo "Database Sandbox  : PostgreSQL (classicmodels)"
 echo "=========================================================="
 echo "Tekan Ctrl+C untuk menghentikan server."

@@ -44,6 +44,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Custom SQL Upload Form
     document.getElementById("sql-upload-form")?.addEventListener("submit", handleSqlUpload);
+
+    // Change Master Password Modal & Form
+    document.getElementById("btn-open-change-pw-modal")?.addEventListener("click", openChangePasswordModal);
+    document.getElementById("form-change-password")?.addEventListener("submit", handleChangePassword);
 });
 
 // ==============================================================================
@@ -503,3 +507,87 @@ function escapeHtml(str) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+// ==============================================================================
+// 7. Ubah Password Master Admin
+// ==============================================================================
+function openChangePasswordModal() {
+    const alertBox = document.getElementById("change-pw-alert");
+    if (alertBox) {
+        alertBox.style.display = "none";
+        alertBox.textContent = "";
+    }
+    const currentInput = document.getElementById("current-master-pw");
+    const newInput = document.getElementById("new-master-pw");
+    const confirmInput = document.getElementById("confirm-master-pw");
+    if (currentInput) currentInput.value = "";
+    if (newInput) newInput.value = "";
+    if (confirmInput) confirmInput.value = "";
+
+    const modal = document.getElementById("change-pw-modal");
+    if (modal) {
+        modal.style.display = "flex";
+        currentInput?.focus();
+    }
+}
+
+async function handleChangePassword(e) {
+    e.preventDefault();
+    const currentPw = document.getElementById("current-master-pw").value;
+    const newPw = document.getElementById("new-master-pw").value;
+    const confirmPw = document.getElementById("confirm-master-pw").value;
+    const alertBox = document.getElementById("change-pw-alert");
+
+    const showAlert = (msg, isSuccess = false) => {
+        if (!alertBox) return;
+        alertBox.style.display = "block";
+        if (isSuccess) {
+            alertBox.style.backgroundColor = "rgba(16, 185, 129, 0.15)";
+            alertBox.style.color = "#34d399";
+            alertBox.style.border = "1px solid rgba(16, 185, 129, 0.3)";
+        } else {
+            alertBox.style.backgroundColor = "rgba(239, 68, 68, 0.15)";
+            alertBox.style.color = "#f87171";
+            alertBox.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+        }
+        alertBox.textContent = msg;
+    };
+
+    if (newPw !== confirmPw) {
+        showAlert("Konfirmasi password baru tidak cocok!");
+        return;
+    }
+
+    if (newPw.length < 4) {
+        showAlert("Password baru minimal 4 karakter!");
+        return;
+    }
+
+    const btn = document.getElementById("btn-save-master-pw");
+    btn.disabled = true;
+    btn.textContent = "Menyimpan...";
+
+    try {
+        const res = await fetch("/api/admin/change-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ current_password: currentPw, new_password: newPw })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showAlert("✅ Password master admin berhasil diperbarui!", true);
+            showToast("Password master admin berhasil diperbarui!", "success");
+            setTimeout(() => {
+                document.getElementById("change-pw-modal").style.display = "none";
+            }, 1200);
+        } else {
+            showAlert(data.message || "Gagal mengubah password!");
+        }
+    } catch (err) {
+        showAlert("Terjadi kesalahan jaringan.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Simpan Password";
+    }
+}
+

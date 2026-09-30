@@ -83,12 +83,22 @@ def init_system_db():
         );
         """)
 
-        # Insert default master key if not set
+        # Insert or sync default master key
         cur = conn.cursor()
+        env_master_key = os.getenv("ADMIN_MASTER_KEY")
         cur.execute("SELECT value FROM system_settings WHERE key = 'admin_master_key';")
-        if not cur.fetchone():
+        existing_row = cur.fetchone()
+        if not existing_row:
+            initial_key = env_master_key.strip() if env_master_key else "admin123"
             cur.execute(
-                "INSERT INTO system_settings (key, value) VALUES ('admin_master_key', 'admin123');"
+                "INSERT INTO system_settings (key, value) VALUES ('admin_master_key', ?);",
+                (initial_key,)
+            )
+        elif env_master_key and env_master_key.strip():
+            # Jika user mendefinisikan ADMIN_MASTER_KEY eksplisit via env/script, sinkronkan ke database
+            cur.execute(
+                "UPDATE system_settings SET value = ? WHERE key = 'admin_master_key';",
+                (env_master_key.strip(),)
             )
 
         # Seed initial exam questions if empty
@@ -97,6 +107,34 @@ def init_system_db():
             seed_default_questions(conn)
 
     conn.close()
+
+def get_admin_master_key() -> str:
+    """Mengambil password master admin saat ini dari tabel system_settings."""
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT value FROM system_settings WHERE key = 'admin_master_key';")
+    row = cur.fetchone()
+    conn.close()
+    return row["value"] if row else "admin123"
+
+def update_admin_master_key(new_key: str) -> bool:
+    """Memperbarui password master admin dan mencatatnya ke log aktivitas."""
+    new_key = new_key.strip()
+    conn = get_sqlite_conn()
+    with conn:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO system_settings (key, value) VALUES ('admin_master_key', ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+            """,
+            (new_key,)
+        )
+        cur.execute(
+            "INSERT INTO exam_logs (action_type, details) VALUES ('change_master_key', 'Password master admin berhasil diperbarui.');"
+        )
+    conn.close()
+    return True
 
 def seed_default_questions(conn: sqlite3.Connection):
     sample_questions = [

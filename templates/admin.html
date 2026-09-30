@@ -21,6 +21,9 @@
             <div class="user-tag" title="Alamat IP Server Host">
                 <span>Host IP: <strong>{{ host_ip }}</strong></span>
             </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-change-pw-modal" title="Ubah Password Master Admin/Pengawas">
+                🔑 Ganti Password
+            </button>
             <a href="/admin/logout" class="btn btn-secondary btn-sm">
                 Logout Pengawas
             </a>
@@ -349,6 +352,40 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeQuestionModal()">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan Soal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Ubah Password Master Admin -->
+    <div class="modal-backdrop" id="change-pw-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="change-pw-modal-title">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3 id="change-pw-modal-title" style="font-size: 1.15rem;">🔑 Ubah Password Master Admin</h3>
+                <button type="button" class="modal-close-btn" onclick="document.getElementById('change-pw-modal').style.display='none'">&times;</button>
+            </div>
+            <form id="form-change-password">
+                <div class="modal-body">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        Password ini digunakan untuk autentikasi login ke portal pengawas (<code>/admin/login</code>).
+                    </p>
+                    <div id="change-pw-alert" style="display: none; padding: 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem;"></div>
+                    <div class="form-group" style="margin-bottom: 0.85rem;">
+                        <label for="current-master-pw" class="form-label">Password Saat Ini</label>
+                        <input type="password" id="current-master-pw" class="form-input" required placeholder="Password saat ini (default: admin123)">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.85rem;">
+                        <label for="new-master-pw" class="form-label">Password Baru</label>
+                        <input type="password" id="new-master-pw" class="form-input" required placeholder="Minimal 4 karakter">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-master-pw" class="form-label">Konfirmasi Password Baru</label>
+                        <input type="password" id="confirm-master-pw" class="form-input" required placeholder="Ulangi password baru">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('change-pw-modal').style.display='none'">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-master-pw">Simpan Password</button>
                 </div>
             </form>
         </div>

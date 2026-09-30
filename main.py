@@ -105,6 +105,10 @@ class KickStudentRequest(BaseModel):
 class ClearSessionsRequest(BaseModel):
     clear_logs: bool = False
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 # ==============================================================================
 # Student Web Navigation Routes
 # ==============================================================================
@@ -289,13 +293,7 @@ async def admin_login_page(request: Request, error: Optional[str] = None):
 
 @app.post("/admin/login")
 async def admin_handle_login(master_key: str = Form(...)):
-    conn = database.get_sqlite_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT value FROM system_settings WHERE key = 'admin_master_key';")
-    row = cur.fetchone()
-    conn.close()
-
-    stored_key = row["value"] if row else "admin123"
+    stored_key = database.get_admin_master_key()
     if master_key.strip() == stored_key:
         res = RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
         res.set_cookie(key="admin_session", value=ADMIN_SESSION_TOKEN, httponly=True)
@@ -380,6 +378,22 @@ async def api_admin_clear_sessions(req: ClearSessionsRequest, request: Request):
         "status": "success",
         "message": f"Data sesi sebelumnya berhasil dibersihkan. {result['users_cleared']} mahasiswa dan {result['submissions_cleared']} submisi dihapus."
     }
+
+@app.post("/api/admin/change-password")
+async def api_admin_change_password(req: ChangePasswordRequest, request: Request):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+    
+    current_key = database.get_admin_master_key()
+    if req.current_password.strip() != current_key:
+        return {"success": False, "message": "Password lama tidak sesuai!"}
+    
+    new_pw = req.new_password.strip()
+    if not new_pw or len(new_pw) < 4:
+        return {"success": False, "message": "Password baru minimal 4 karakter!"}
+    
+    database.update_admin_master_key(new_pw)
+    return {"success": True, "message": "Password master admin berhasil diperbarui!"}
 
 @app.get("/api/admin/questions")
 async def api_admin_questions(request: Request):
