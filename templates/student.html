@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lembar Ujian Praktikum Basis Data</title>
+    <!-- 100% Offline Assets: Self-Hosted CodeMirror & Styles -->
+    <link rel="stylesheet" href="/static/vendor/codemirror/lib/codemirror.css">
+    <link rel="stylesheet" href="/static/vendor/codemirror/theme/dracula.css">
+    <link rel="stylesheet" href="/static/vendor/codemirror/addon/hint/show-hint.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-nim="{{ user.nim }}" data-token="{{ user.session_token }}">
+
+    <!-- Header Navigation -->
+    <header class="app-header">
+        <div class="brand-wrapper">
+            <span class="brand-logo-badge">EXAM IDE</span>
+            <div class="brand-title">Ujian Praktikum Basis Data</div>
+            <span class="status-badge badge-online">Terkoneksi</span>
+        </div>
+
+        <div class="header-meta">
+            <div class="user-tag">
+                <span>NIM: <strong>{{ user.nim }}</strong></span>
+                <span style="color: var(--text-subtle);">|</span>
+                <span>{{ user.name }}</span>
+            </div>
+            <div class="user-tag" title="Alamat IP Perangkat Anda">
+                <code>{{ user.ip_address }}</code>
+            </div>
+            <a href="/logout" class="btn btn-secondary btn-sm" onclick="return confirm('Apakah Anda yakin ingin keluar dari sesi ujian?');">
+                Keluar
+            </a>
+        </div>
+    </header>
+
+    <!-- IDE Container -->
+    <main class="ide-container">
+        
+        <!-- Left Panel: Questions & Schema -->
+        <aside class="sidebar-panel">
+            <div class="sidebar-header">
+                <span style="font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+                    Daftar Soal
+                </span>
+                <span id="submission-status-tag" class="status-badge badge-warning">
+                    Belum Disubmit
+                </span>
+            </div>
+
+            <!-- Numbers Grid -->
+            <div class="question-nav-grid" id="question-nav">
+                <!-- Populated dynamically by student.js -->
+            </div>
+
+            <!-- Active Question Description -->
+            <div class="question-content-pane">
+                <div class="question-title-card">
+                    <span id="q-number" style="font-size: 0.8rem; font-weight: 600; color: #60a5fa; text-transform: uppercase;">
+                        Soal No. 1
+                    </span>
+                    <h3 id="q-title">Memuat Soal...</h3>
+                    <span class="weight-pill" id="q-weight">Bobot: - Poin</span>
+                </div>
+
+                <div class="question-description-body" id="q-description">
+                    <p>Silakan pilih nomor soal di atas untuk membaca instruksi query.</p>
+                </div>
+            </div>
+
+            <!-- Database Schema Browser Drawer -->
+            <div class="schema-browser-wrapper">
+                <div class="schema-header">
+                    <span>Skema Database (classicmodels)</span>
+                    <span style="font-size: 0.7rem; color: #60a5fa;">Klik kolom untuk menyalin</span>
+                </div>
+                <div id="schema-tree-container">
+                    <div style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-align: center;">
+                        Memuat skema tabel...
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Panel: SQL Editor & Output Table -->
+        <section class="work-area">
+            
+            <!-- Editor Actions Toolbar -->
+            <div class="editor-toolbar">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">
+                        SQL Editor
+                    </span>
+                    <span style="font-size: 0.75rem; color: var(--text-subtle);">
+                        (PostgreSQL Sandbox - Read-Only)
+                    </span>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-format-sql" title="Rapikan kata kunci query">
+                        Format SQL
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btn-run-query" title="Jalankan query untuk melihat output (Ctrl+Enter)">
+                        Run Query
+                    </button>
+                    <button type="button" class="btn btn-success" id="btn-submit-answer" title="Simpan query ini sebagai jawaban resmi">
+                        Submit Answer
+                    </button>
+                </div>
+            </div>
+
+            <!-- CodeMirror Editor Pane -->
+            <div class="editor-pane">
+                <textarea id="sql-editor" name="sql_editor"></textarea>
+            </div>
+
+            <!-- Output Toolbar -->
+            <div class="output-toolbar">
+                <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">
+                    Hasil Eksekusi
+                </div>
+                <div class="output-meta" id="output-meta-text">
+                    Siap dieksekusi
+                </div>
+            </div>
+
+            <!-- Output Table / State Box -->
+            <div class="output-pane" id="output-content">
+                <div class="state-box state-box-empty">
+                    <p>Klik tombol <strong>Run Query</strong> atau tekan <code>Ctrl + Enter</code> untuk melihat hasil eksekusi SQL.</p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- 100% Offline JavaScript Modules -->
+    <script src="/static/vendor/codemirror/lib/codemirror.js"></script>
+    <script src="/static/vendor/codemirror/mode/sql/sql.js"></script>
+    <script src="/static/vendor/codemirror/addon/hint/show-hint.js"></script>
+    <script src="/static/vendor/codemirror/addon/hint/sql-hint.js"></script>
+    <script src="/static/js/student.js"></script>
+
+</body>
+</html>

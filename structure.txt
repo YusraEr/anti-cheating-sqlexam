@@ -1,0 +1,26 @@
+web-basdat/
+│
+├── main.py                     # Entry point FastAPI, Routing Mahasiswa, Routing Admin & Auth
+├── database.py                 # Engine SQLite (Users, Soal, Submissions, Logs) & Postgres Sandbox
+├── setup_postgres.sql          # Script inisialisasi role student_role & hak akses read-only
+├── requirements.txt            # Daftar pustaka Python (FastAPI, Uvicorn, Psycopg2, etc.)
+├── run.sh                      # Shell script satu-klik untuk menjalankan server di IP host
+├── structure.txt               # Dokumentasi pohon direktori proyek
+│
+├── data/
+│   └── classicmodels.sql       # Schema & master dataset database ujian PostgreSQL
+│
+├── templates/
+│   ├── login.html              # Halaman login mahasiswa (NIM & Nama, IP binding alert)
+│   ├── student.html            # Workspace ujian (LeetCode style: Soal, Editor SQL, Data Grid)
+│   ├── admin.html              # Dashboard Dosen (Monitoring live, CRUD Soal, Reset DB, Export)
+│   └── admin_login.html        # Portal login dosen menggunakan Master Key
+│
+└── static/
+    ├── css/
+    │   └── style.css           # Styling modern offline-ready (IDE layout, responsive, dark/light)
+    ├── js/
+    │   ├── student.js          # Controller ujian (CodeMirror, Run query, anti-paste, heartbeat)
+    │   └── admin.js            # Controller admin (Polling live, CRUD modal, DB reset, CSV/ZIP)
+    └── vendor/
+        └── codemirror/         # Full self-hosted CodeMirror 5 (lib, mode/sql, addon/hint, themes)

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Dosen / Pengawas - Offline SQL Exam</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="login-page-wrapper">
+
+    <div class="login-card">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <span class="brand-logo-badge" style="background-color: #475569;">ADMIN PANEL</span>
+            <h1 style="font-size: 1.35rem; margin-top: 0.75rem;">Portal Dosen & Pengawas</h1>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Masukkan Master Key untuk mengelola ujian</p>
+        </div>
+
+        {% if error %}
+        <div class="alert-box alert-danger">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/admin/login">
+            <div class="form-group">
+                <label for="master_key" class="form-label">Master Key Dosen</label>
+                <input 
+                    type="password" 
+                    id="master_key" 
+                    name="master_key" 
+                    class="form-input" 
+                    placeholder="Masukkan master key..." 
+                    required 
+                    autofocus
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Masuk ke Dashboard Pengawas
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+            <a href="/login" style="color: #60a5fa; text-decoration: none; font-size: 0.85rem;">
+                &larr; Kembali ke Login Mahasiswa
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

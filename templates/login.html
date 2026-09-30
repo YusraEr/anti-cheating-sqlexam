@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Ujian Praktikum Basis Data - Offline Exam</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="login-page-wrapper">
+
+    <div class="login-card">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <span class="brand-logo-badge" style="font-size: 0.95rem; padding: 0.35rem 0.75rem;">SQL EXAM</span>
+            <h1 style="font-size: 1.4rem; margin-top: 0.75rem;">Ujian Praktikum Basis Data</h1>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Laboratorium Basis Data - Offline Network</p>
+        </div>
+
+        {% if error %}
+        <div class="alert-box alert-danger">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if message %}
+        <div class="alert-box alert-warning">
+            {{ message }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/login" id="login-form">
+            <div class="form-group">
+                <label for="nim" class="form-label">Nomor Induk Mahasiswa (NIM)</label>
+                <input 
+                    type="text" 
+                    id="nim" 
+                    name="nim" 
+                    class="form-input" 
+                    placeholder="Contoh: 2110511001" 
+                    value="{{ nim_value or '' }}"
+                    required 
+                    autocomplete="off"
+                    autofocus
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="name" class="form-label">Nama Lengkap Mahasiswa</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-input" 
+                    placeholder="Contoh: Ahmad Fauzan" 
+                    value="{{ name_value or '' }}"
+                    required 
+                    autocomplete="off"
+                >
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: #94a3b8;">
+                <strong style="color: #f59e0b;">Perhatian & Ketentuan Ujian:</strong>
+                <ul style="padding-left: 1.2rem; margin-top: 0.35rem; line-height: 1.5;">
+                    <li>Setiap NIM terikat pada 1 perangkat (IP Binding). Login dari laptop lain akan otomatis membatalkan sesi ini.</li>
+                    <li>Sistem mencatat aktivitas perpindahan tab atau jendela browser sebagai log kecurangan.</li>
+                    <li>Fitur copy-paste pada editor SQL dinonaktifkan.</li>
+                </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Masuk ke Lembar Ujian
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+            <a href="/admin/login" style="color: #60a5fa; text-decoration: none; font-size: 0.85rem;">
+                Akses Dosen / Pengawas Ujian &rarr;
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
