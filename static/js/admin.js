@@ -104,8 +104,8 @@ async function loadDashboardData() {
 
         let html = "";
         students.forEach(s => {
-            const statusBadge = s.is_active 
-                ? `<span class="status-badge badge-online">Aktif</span>` 
+            const statusBadge = s.is_active
+                ? `<span class="status-badge badge-online">Aktif</span>`
                 : `<span class="status-badge badge-offline">Offline</span>`;
 
             let cheatBadge = `<span style="color: #64748b;">0</span>`;
@@ -165,7 +165,7 @@ async function confirmStopAllSessions() {
         showToast("Gagal menghentikan semua sesi.", "danger");
     } finally {
         btn.disabled = false;
-        btn.textContent = "⛔ Hentikan Semua Sesi";
+        btn.textContent = "Hentikan Semua Sesi";
     }
 }
 
@@ -212,7 +212,7 @@ async function confirmClearLogs() {
         showToast("Gagal membersihkan log.", "danger");
     } finally {
         btn.disabled = false;
-        btn.textContent = "🗑️ Bersihkan Semua Log";
+        btn.textContent = "Bersihkan Semua Log";
     }
 }
 
@@ -353,13 +353,13 @@ async function loadSchemaPreview() {
             html += `
                 <div style="background: #0f172a; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem;">
                     <div style="font-weight: 600; color: #93c5fd; margin-bottom: 0.4rem; display: flex; justify-content: space-between;">
-                        <span>📋 Tabel: ${table}</span>
+                        <span>Tabel: ${table}</span>
                         <span style="font-size: 0.75rem; color: var(--text-muted);">${cols.length} Kolom</span>
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
                         ${cols.map(c => `
                             <span style="font-size: 0.75rem; background: #1e293b; padding: 0.15rem 0.45rem; border-radius: 3px; font-family: var(--font-mono); color: ${c.pk ? '#f59e0b' : '#cbd5e1'};">
-                                ${c.pk ? '🔑 ' : ''}${c.name} (${c.type})
+                                ${c.pk ? '[PK] ' : ''}${c.name} (${c.type})
                             </span>
                         `).join("")}
                     </div>
@@ -575,7 +575,7 @@ async function handleChangePassword(e) {
         });
         const data = await res.json();
         if (data.success) {
-            showAlert("✅ Password master admin berhasil diperbarui!", true);
+            showAlert("Password master admin berhasil diperbarui!", true);
             showToast("Password master admin berhasil diperbarui!", "success");
             setTimeout(() => {
                 document.getElementById("change-pw-modal").style.display = "none";

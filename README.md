@@ -42,15 +42,15 @@ Platform ujian SQL berbasis web yang dirancang untuk digunakan dalam jaringan Wi
 | Fitur | Deskripsi |
 |---|---|
 | **Live Monitoring** | Pantau status online/offline mahasiswa secara real-time (auto-refresh 6 detik) |
-| **⛔ Hentikan Semua Sesi** | Paksa logout seluruh mahasiswa sekaligus dengan satu klik |
-| **⚠️ Bersihkan Sesi Sebelumnya** | Hapus seluruh data mahasiswa & jawaban untuk mempersiapkan sesi ujian baru |
+| **Hentikan Semua Sesi** | Paksa logout seluruh mahasiswa sekaligus dengan satu klik |
+| **Bersihkan Sesi Sebelumnya** | Hapus seluruh data mahasiswa & jawaban untuk mempersiapkan sesi ujian baru |
 | **Reset Sesi Mahasiswa** | Kick & reset sesi mahasiswa tertentu agar bisa login kembali jika koneksi terputus |
-| **🔑 Ganti Password Master** | Ubah password master admin langsung melalui Web UI atau konfigurasi script |
+| **Ganti Password Master** | Ubah password master admin langsung melalui Web UI atau konfigurasi script |
 | **Manajemen Soal** | CRUD soal ujian dengan bobot nilai dan kunci jawaban query referensi |
 | **Reset Database Sandbox** | Kembalikan dataset `classicmodels` ke kondisi awal |
 | **Upload SQL Custom** | Unggah file `.sql` untuk skema dan dataset ujian yang berbeda |
 | **Log Aktivitas & Deteksi** | Rekam semua kejadian: login, submit, perpindahan tab, percobaan pembajakan NIM |
-| **🧹 Bersihkan Log** | Hapus riwayat log aktivitas sebelum sesi ujian baru dimulai |
+| **Bersihkan Log** | Hapus riwayat log aktivitas sebelum sesi ujian baru dimulai |
 | **Export CSV** | Unduh seluruh jawaban mahasiswa dalam format spreadsheet siap nilai |
 | **Export ZIP (.sql)** | Unduh satu file `.sql` per mahasiswa untuk arsip dan penilaian offline |
 
@@ -229,7 +229,7 @@ Tekan Ctrl+C untuk menghentikan server.
 | **Mahasiswa** | `http://<IP_HOST>:8000` | NIM + Nama Lengkap |
 | **Pengawas/Admin** | `http://localhost:8000/admin` | Master Key: `admin123` (atau sesuai konfigurasi) |
 
-> 📌 **Catatan:** Ganti `<IP_HOST>` dengan IP lokal Wi-Fi yang tercetak di jendela terminal saat server dijalankan (misal `http://192.168.1.15:8000`).
+> **Catatan:** Ganti `<IP_HOST>` dengan IP lokal Wi-Fi yang tercetak di jendela terminal saat server dijalankan (misal `http://192.168.1.15:8000`).
 
 ---
 
@@ -239,7 +239,7 @@ Password default master admin saat pertama kali diinstal adalah **`admin123`**. 
 
 ### Metode 1: Melalui Web Dashboard Admin (Paling Praktis)
 1. Buka `http://localhost:8000/admin` di browser laptop dosen dan login.
-2. Di pojok kanan atas header dashboard, klik tombol **"🔑 Ganti Password"**.
+2. Di pojok kanan atas header dashboard, klik tombol **"Ganti Password"**.
 3. Masukkan password saat ini, password baru (minimal 4 karakter), dan konfirmasi password baru.
 4. Klik **"Simpan Password"**. Perubahan langsung tersimpan ke database SQLite.
 
@@ -296,10 +296,10 @@ Jalankan perintah ini di terminal / command prompt proyek Anda:
 
 | Tombol | Tab | Fungsi |
 |---|---|---|
-| **⛔ Hentikan Semua Sesi** | Monitoring | Memaksa logout seluruh mahasiswa yang sedang online sekaligus |
-| **⚠️ Bersihkan Sesi** | Monitoring | Menghapus seluruh data mahasiswa & jawaban untuk ujian baru |
+| **Hentikan Semua Sesi** | Monitoring | Memaksa logout seluruh mahasiswa yang sedang online sekaligus |
+| **Bersihkan Sesi** | Monitoring | Menghapus seluruh data mahasiswa & jawaban untuk ujian baru |
 | **Reset Sesi** | Monitoring | Me-reset sesi mahasiswa tertentu jika terjadi kendala teknis perangkat |
-| **🧹 Bersihkan Log** | Log Aktivitas | Mengosongkan riwayat log aktivitas dan insiden kecurangan |
+| **Bersihkan Log** | Log Aktivitas | Mengosongkan riwayat log aktivitas dan insiden kecurangan |
 | **Reset Database Sandbox**| Database | Mengembalikan tabel-tabel PostgreSQL ke kondisi awal |
 | **Export CSV / ZIP** | Export | Mengunduh lembar jawaban seluruh mahasiswa |
 
@@ -323,7 +323,7 @@ Sistem mengimplementasikan proteksi berlapis untuk memastikan ujian berjalan juj
 
 | Mekanisme | Implementasi |
 |---|---|
-| **🔒 Unique NIM Enforcement** | 1 NIM hanya dapat aktif pada 1 perangkat. Percobaan login ganda dari perangkat lain ditolak otomatis. |
+| **Unique NIM Enforcement** | 1 NIM hanya dapat aktif pada 1 perangkat. Percobaan login ganda dari perangkat lain ditolak otomatis. |
 | **Anti-Joki (Name Matching)** | Jika login dengan NIM yang sudah terdaftar tetapi nama berbeda, sistem langsung menolak dan mencatat insiden `nim_hijack_attempt`. |
 | **Anti-Joki Multi-Account IP**| Satu IP perangkat mahasiswa tidak diizinkan membuka akun mahasiswa lain secara bersamaan. |
 | **PostgreSQL Read-Only Role** | Mahasiswa hanya menggunakan role `student_role` yang dibatasi hak `SELECT` saja. |

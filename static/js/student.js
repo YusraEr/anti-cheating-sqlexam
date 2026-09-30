@@ -430,7 +430,7 @@ async function loadSchema() {
         Object.keys(schema).forEach(table => {
             const tableItem = document.createElement("div");
             tableItem.className = "schema-tree-item";
-            tableItem.innerHTML = `<strong>📁 ${table}</strong>`;
+            tableItem.innerHTML = `<strong>${table}</strong>`;
             
             const columnsList = document.createElement("div");
             columnsList.className = "schema-columns-list";
@@ -438,7 +438,7 @@ async function loadSchema() {
             schema[table].forEach(col => {
                 const colRow = document.createElement("div");
                 colRow.className = "schema-col-row";
-                const pkLabel = col.pk ? `<span class="schema-col-pk">🔑 PK</span>` : "";
+                const pkLabel = col.pk ? `<span class="schema-col-pk">PK</span>` : "";
                 colRow.innerHTML = `
                     <span style="cursor: pointer;" title="Klik untuk masukkan nama kolom">${col.name} ${pkLabel}</span>
                     <span>${col.type}</span>
