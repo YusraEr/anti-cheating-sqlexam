@@ -76,7 +76,7 @@ web-basdat/
 │
 ├── main.py                  # Routing FastAPI: mahasiswa, admin, REST API
 ├── database.py              # SQLite system engine + PostgreSQL sandbox runner
-├── setup_postgres.sql       # Script inisialisasi role & sandbox database
+├── setup_postgres.sql       # Script SQL inisialisasi role & sandbox (opsional/manual)
 ├── requirements.txt         # Dependensi Python
 ├── run.sh                   # Runner satu-klik untuk macOS & Linux
 ├── run.bat                  # Runner satu-klik untuk Windows (Command Prompt)
@@ -131,23 +131,30 @@ Pastikan perangkat **host (laptop dosen/pengawas)** sudah terpasang:
    pip install -r requirements.txt
    ```
 
-4. **Inisialisasi Database PostgreSQL:**
-   Sesuaikan Username postgre dengan password yang ada pada file `database.py` pada line 22 & 23
-   ```bash
-    PG_ADMIN_USER = os.getenv("PG_ADMIN_USER", "postgres")
-    PG_ADMIN_PASS = os.getenv("PG_ADMIN_PASS", "")
+4. **Konfigurasi Akun PostgreSQL:**
+   Pastikan service PostgreSQL sedang berjalan (`brew services start postgresql` di macOS/Linux).
+   Sesuaikan username dan password PostgreSQL Anda pada file [`database.py`](file:///Users/yusra/Documents/web%20basdat/database.py) (baris 22 & 23) atau buat file `.env`:
+   ```python
+   PG_ADMIN_USER = os.getenv("PG_ADMIN_USER", "postgres")
+   PG_ADMIN_PASS = os.getenv("PG_ADMIN_PASS", "")  # Isi dengan password postgres Anda jika ada
    ```
+
+   > **Inisialisasi Otomatis:** Anda **TIDAK PERLU** membuat database atau menjalankan script SQL secara manual. Saat Anda menjalankan server pertama kali via `./run.sh`, sistem akan secara otomatis:
+   > - Membuat database `classicmodels` jika belum ada
+   > - Membuat role `student_role` dengan password `student123`
+   > - Memuat schema dan dataset master dari `data/classicmodels.sql`
+   > - Mengonfigurasi hak akses read-only sandbox secara otomatis
 
 ---
 
 ### Setup di Windows
 
-1. **Buka Command Prompt atau PowerShell** sebagai Administrator dan arahkan ke folder proyek:
+1. **Buka Command Prompt atau PowerShell** dan arahkan ke folder proyek:
    ```cmd
    cd "C:\path\ke\web basdat"
    ```
 
-2. **Buat Virtual Environment (opsional):**
+2. **Buat Virtual Environment (opsional tapi disarankan):**
    ```cmd
    python -m venv venv
    venv\Scripts\activate
@@ -158,12 +165,15 @@ Pastikan perangkat **host (laptop dosen/pengawas)** sudah terpasang:
    pip install -r requirements.txt
    ```
 
-4. **Inisialisasi Database PostgreSQL di Windows:**
-   Sesuaikan Username postgre dengan password yang ada pada file `database.py` pada line 22 & 23
-   ```bash
-    PG_ADMIN_USER = os.getenv("PG_ADMIN_USER", "postgres")
-    PG_ADMIN_PASS = os.getenv("PG_ADMIN_PASS", "")
+4. **Konfigurasi Akun PostgreSQL di Windows:**
+   Pastikan service PostgreSQL berjalan (buka `services.msc` -> pastikan status **Running** pada postgresql).
+   Sesuaikan username dan password PostgreSQL Anda pada file [`database.py`](file:///Users/yusra/Documents/web%20basdat/database.py) (baris 22 & 23) atau buat file `.env`:
+   ```python
+   PG_ADMIN_USER = os.getenv("PG_ADMIN_USER", "postgres")
+   PG_ADMIN_PASS = os.getenv("PG_ADMIN_PASS", "password_postgres_anda")
    ```
+
+   > **Inisialisasi Otomatis:** Tidak perlu setup manual melalui psql. Cukup jalankan `run.bat` atau `.\run.ps1`, database `classicmodels`, role ujian `student_role`, dan dataset akan otomatis dibuat dan siap digunakan!
 
 ---
 

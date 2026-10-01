@@ -15,6 +15,22 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SQLITE_DB_PATH = os.path.join(BASE_DIR, "exam_system.db")
 CLASSICMODELS_SQL_PATH = os.path.join(BASE_DIR, "data", "classicmodels.sql")
 
+# Load .env file automatically if present
+env_file = os.path.join(BASE_DIR, ".env")
+if os.path.exists(env_file):
+    try:
+        with open(env_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+    except Exception:
+        pass
+
 # PostgreSQL Configuration
 PG_HOST = os.getenv("PG_HOST", "localhost")
 PG_PORT = int(os.getenv("PG_PORT", 5432))
@@ -775,6 +791,112 @@ def export_submissions_zip_bytes() -> bytes:
 # ==============================================================================
 # PostgreSQL Exam Database (Sandbox & Execution Engine)
 # ==============================================================================
+
+def init_postgres_db() -> Tuple[bool, str]:
+    """
+    Menginisialisasi PostgreSQL secara otomatis pada run pertama kali:
+    1. Mengecek koneksi ke server PostgreSQL.
+    2. Membuat database 'classicmodels' jika belum ada.
+    3. Membuat role 'student_role' dengan izin read-only jika belum ada.
+    4. Mengisi dataset awal dari data/classicmodels.sql jika database masih kosong.
+    """
+    admin_pass = PG_ADMIN_PASS or None
+    
+    # 1. Coba koneksi ke PostgreSQL
+    conn = None
+    try:
+        conn = psycopg2.connect(
+            dbname=PG_DB,
+            user=PG_ADMIN_USER,
+            password=admin_pass,
+            host=PG_HOST,
+            port=PG_PORT
+        )
+    except psycopg2.OperationalError as e:
+        err_str = str(e)
+        # Jika database belum ada, buat database secara otomatis
+        if "does not exist" in err_str or "tidak ada" in err_str:
+            fallback_conn = None
+            for default_db in ("postgres", "template1"):
+                try:
+                    fallback_conn = psycopg2.connect(
+                        dbname=default_db,
+                        user=PG_ADMIN_USER,
+                        password=admin_pass,
+                        host=PG_HOST,
+                        port=PG_PORT
+                    )
+                    break
+                except Exception:
+                    continue
+
+            if not fallback_conn:
+                return False, f"PostgreSQL berjalan, tetapi database '{PG_DB}' belum ada dan gagal terhubung ke database default (postgres/template1) untuk membuatnya: {err_str}"
+
+            try:
+                fallback_conn.autocommit = True
+                cur = fallback_conn.cursor()
+                cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(PG_DB)))
+                cur.close()
+                fallback_conn.close()
+
+                # Hubungkan ke database yang baru dibuat
+                conn = psycopg2.connect(
+                    dbname=PG_DB,
+                    user=PG_ADMIN_USER,
+                    password=admin_pass,
+                    host=PG_HOST,
+                    port=PG_PORT
+                )
+            except Exception as create_err:
+                return False, f"Gagal membuat database '{PG_DB}': {create_err}"
+        else:
+            return False, f"PostgreSQL belum dapat diakses ({PG_HOST}:{PG_PORT}): {err_str}"
+    except Exception as e:
+        return False, f"Gagal koneksi PostgreSQL: {e}"
+
+    # 2. Setup student_role dan muat dataset jika database masih kosong
+    try:
+        conn.autocommit = True
+        cur = conn.cursor()
+
+        # Buat atau sinkronkan student_role
+        cur.execute(f"""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{PG_STUDENT_USER}') THEN
+                CREATE ROLE {PG_STUDENT_USER} WITH LOGIN PASSWORD '{PG_STUDENT_PASS}';
+            ELSE
+                ALTER ROLE {PG_STUDENT_USER} WITH LOGIN PASSWORD '{PG_STUDENT_PASS}';
+            END IF;
+        END
+        $$;
+        """)
+
+        # Periksa apakah sudah ada tabel di user schemas
+        cur.execute("""
+            SELECT COUNT(*) 
+            FROM information_schema.tables 
+            WHERE table_schema NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+              AND table_schema NOT LIKE 'pg_%%'
+              AND table_type = 'BASE TABLE';
+        """)
+        table_count = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+
+        # Jika database masih baru/kosong, isi dataset awal secara otomatis
+        if table_count == 0:
+            ok, msg = reset_classicmodels_database()
+            if not ok:
+                return False, f"Database '{PG_DB}' dibuat, namun gagal memuat dataset: {msg}"
+            return True, f"Database '{PG_DB}', role '{PG_STUDENT_USER}', dan dataset master berhasil diinisialisasi otomatis."
+
+        return True, f"Database '{PG_DB}' dan role '{PG_STUDENT_USER}' siap digunakan ({table_count} tabel aktif)."
+    except Exception as e:
+        if conn and not conn.closed:
+            conn.close()
+        return False, f"Gagal setup PostgreSQL: {e}"
 
 def get_pg_admin_connection():
     """Returns an administrative connection to PostgreSQL."""

@@ -31,10 +31,13 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     database.init_system_db()
+    pg_ok, pg_msg = database.init_postgres_db()
     health = database.verify_system_health()
     print("---------------------------------------------------------")
     print("Offline SQL Exam System Server Starting...")
     print(f"System SQLite DB Status      : {'OK' if health['sqlite'] else 'ERROR'}")
+    print(f"PostgreSQL Sandbox Status    : {'OK' if pg_ok else 'PERHATIAN'}")
+    print(f"Catatan PostgreSQL           : {pg_msg}")
     print(f"PostgreSQL Admin Status      : {'OK' if health['postgres_admin'] else 'ERROR'}")
     print(f"PostgreSQL student_role Status: {'OK' if health['postgres_student'] else 'ERROR'}")
     print(f"Host Local IP Address        : http://{get_local_host_ip()}:8000")
