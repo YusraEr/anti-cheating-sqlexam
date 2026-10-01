@@ -132,10 +132,10 @@ Pastikan perangkat **host (laptop dosen/pengawas)** sudah terpasang:
    ```
 
 4. **Inisialisasi Database PostgreSQL:**
-   Pastikan PostgreSQL berjalan (`brew services start postgresql` di macOS), lalu jalankan:
+   Sesuaikan Username postgre dengan password yang ada pada file `database.py` pada line 22 & 23
    ```bash
-   psql -U postgres -f setup_postgres.sql
-   psql -U postgres -d classicmodels -f data/classicmodels.sql
+    PG_ADMIN_USER = os.getenv("PG_ADMIN_USER", "postgres")
+    PG_ADMIN_PASS = os.getenv("PG_ADMIN_PASS", "")
    ```
 
 ---
@@ -159,12 +159,11 @@ Pastikan perangkat **host (laptop dosen/pengawas)** sudah terpasang:
    ```
 
 4. **Inisialisasi Database PostgreSQL di Windows:**
-   Pastikan service PostgreSQL berjalan (buka `services.msc` → pastikan status **Running** pada postgresql), lalu jalankan perintah:
-   ```cmd
-   psql -U postgres -f setup_postgres.sql
-   psql -U postgres -d classicmodels -f data\classicmodels.sql
+   Sesuaikan Username postgre dengan password yang ada pada file `database.py` pada line 22 & 23
+   ```bash
+    PG_ADMIN_USER = os.getenv("PG_ADMIN_USER", "postgres")
+    PG_ADMIN_PASS = os.getenv("PG_ADMIN_PASS", "")
    ```
-   *(Jika diminta password, masukkan password user `postgres` yang Anda tentukan saat instalasi PostgreSQL).*
 
 ---
 
