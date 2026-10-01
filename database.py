@@ -935,7 +935,7 @@ def execute_student_query(query_text: str) -> Dict[str, Any]:
 
 def get_classicmodels_schema() -> Dict[str, List[Dict[str, Any]]]:
     """
-    Introspects tables and columns in classicmodels public schema.
+    Introspects tables and columns in classicmodels across all active user schemas.
     Returns: { "table_name": [{"name": col, "type": type, "nullable": bool, "pk": bool}] }
     """
     schema_info = {}
@@ -943,16 +943,19 @@ def get_classicmodels_schema() -> Dict[str, List[Dict[str, Any]]]:
         conn = get_pg_admin_connection()
         cur = conn.cursor()
         
-        # Query public tables and columns
+        # Query user tables and columns across all non-system schemas
         cur.execute("""
             SELECT 
                 c.table_name,
                 c.column_name,
                 c.data_type,
                 c.is_nullable,
-                CASE WHEN tc.constraint_type = 'PRIMARY KEY' THEN 1 ELSE 0 END AS is_pk
+                CASE WHEN tc.constraint_type = 'PRIMARY KEY' THEN 1 ELSE 0 END AS is_pk,
+                c.table_schema
             FROM information_schema.columns c
-            JOIN information_schema.tables t ON c.table_name = t.table_name AND t.table_schema = 'public'
+            JOIN information_schema.tables t 
+                ON c.table_name = t.table_name 
+                AND c.table_schema = t.table_schema
             LEFT JOIN information_schema.key_column_usage kcu
                 ON c.table_name = kcu.table_name 
                 AND c.column_name = kcu.column_name 
@@ -961,8 +964,10 @@ def get_classicmodels_schema() -> Dict[str, List[Dict[str, Any]]]:
                 ON kcu.constraint_name = tc.constraint_name 
                 AND kcu.table_schema = tc.table_schema 
                 AND tc.constraint_type = 'PRIMARY KEY'
-            WHERE c.table_schema = 'public' AND t.table_type = 'BASE TABLE'
-            ORDER BY c.table_name, c.ordinal_position;
+            WHERE c.table_schema NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+              AND c.table_schema NOT LIKE 'pg_%%'
+              AND t.table_type = 'BASE TABLE'
+            ORDER BY c.table_schema, c.table_name, c.ordinal_position;
         """)
         
         rows = cur.fetchall()
@@ -976,7 +981,7 @@ def get_classicmodels_schema() -> Dict[str, List[Dict[str, Any]]]:
             if tbl not in schema_info:
                 schema_info[tbl] = []
             
-            # Avoid duplicate primary key entries
+            # Avoid duplicate column entries
             if not any(item["name"] == col for item in schema_info[tbl]):
                 schema_info[tbl].append({
                     "name": col,
@@ -994,6 +999,8 @@ def get_classicmodels_schema() -> Dict[str, List[Dict[str, Any]]]:
 def reset_classicmodels_database(custom_sql_text: Optional[str] = None) -> Tuple[bool, str]:
     """
     Restores the classicmodels database to the initial clean state.
+    Drops all user schemas (public, classicmodels, etc.) with CASCADE
+    so no duplicate keys or residual schemas remain.
     """
     try:
         if custom_sql_text:
@@ -1007,24 +1014,74 @@ def reset_classicmodels_database(custom_sql_text: Optional[str] = None) -> Tuple
         conn = get_pg_admin_connection()
         conn.autocommit = True
         cur = conn.cursor()
+
+        # 1. Bersihkan SEMUA user schema lama (public, classicmodels, dan schema custom lainnya)
+        cur.execute("""
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+              AND schema_name NOT LIKE 'pg_%%';
+        """)
+        schemas_to_drop = [r[0] for r in cur.fetchall()]
+        for s in schemas_to_drop:
+            cur.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE;").format(sql.Identifier(s)))
+
+        # 2. Buat ulang schema public yang bersih dan reset search_path
+        cur.execute("""
+            CREATE SCHEMA public;
+            GRANT ALL ON SCHEMA public TO postgres;
+            GRANT ALL ON SCHEMA public TO public;
+            SET search_path TO public;
+        """)
+
+        # 3. Eksekusi script SQL baru
         cur.execute(sql_content)
         
-        # Ensure student_role has permissions
+        # 4. Ambil semua user schema yang aktif setelah script dieksekusi
         cur.execute("""
-        DO $$
-        BEGIN
-            IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'student_role') THEN
-                GRANT CONNECT ON DATABASE classicmodels TO student_role;
-                GRANT USAGE ON SCHEMA public TO student_role;
-                GRANT SELECT ON ALL TABLES IN SCHEMA public TO student_role;
-                ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO student_role;
-            END IF;
-        END
-        $$;
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+              AND schema_name NOT LIKE 'pg_%%';
         """)
+        active_schemas = [r[0] for r in cur.fetchall()]
+
+        # 5. Berikan hak akses read-only kepada student_role untuk setiap user schema yang aktif
+        for s in active_schemas:
+            cur.execute(sql.SQL("""
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'student_role') THEN
+                        GRANT CONNECT ON DATABASE classicmodels TO student_role;
+                        GRANT USAGE ON SCHEMA {schema} TO student_role;
+                        GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO student_role;
+                        ALTER DEFAULT PRIVILEGES IN SCHEMA {schema} GRANT SELECT ON TABLES TO student_role;
+                        REVOKE CREATE ON SCHEMA {schema} FROM student_role;
+                    END IF;
+                END
+                $$;
+            """).format(schema=sql.Identifier(s)))
+
+        # 6. Set search_path pada level database dan role student_role
+        search_paths = [f'"{s}"' for s in active_schemas]
+        if "public" not in active_schemas:
+            search_paths.append('"public"')
+        path_str = ", ".join(search_paths)
+
+        cur.execute(f'ALTER DATABASE classicmodels SET search_path TO "$user", {path_str};')
+        cur.execute(f"""
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'student_role') THEN
+                    EXECUTE 'ALTER ROLE student_role SET search_path TO "$user", {path_str}';
+                END IF;
+            END
+            $$;
+        """)
+
         cur.close()
         conn.close()
-        return True, "Database classicmodels berhasil di-reset ke kondisi awal."
+        return True, "Database sandbox berhasil dibersihkan dan dimuat ulang ke kondisi awal."
     except Exception as e:
         return False, f"Gagal mereset database: {str(e)}"
 
