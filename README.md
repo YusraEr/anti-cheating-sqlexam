@@ -53,6 +53,8 @@ Platform ujian SQL berbasis web yang dirancang untuk digunakan dalam jaringan Wi
 | **Bersihkan Log** | Hapus riwayat log aktivitas sebelum sesi ujian baru dimulai |
 | **Export CSV** | Unduh seluruh jawaban mahasiswa dalam format spreadsheet siap nilai |
 | **Export ZIP (.sql)** | Unduh satu file `.sql` per mahasiswa untuk arsip dan penilaian offline |
+| **Rekap Log (CSV)** | Unduh rekaman lengkap seluruh aktivitas sistem ujian (audit trail) dalam format CSV |
+| **Rekap Pindah Tab (CSV)** | Unduh rekapitulasi data frekuensi dan riwayat waktu perpindahan tab/jendela setiap mahasiswa |
 
 ---
 
@@ -339,6 +341,7 @@ Sistem mengimplementasikan proteksi berlapis untuk memastikan ujian berjalan juj
 | **SQL Statement Sanitizer** | Kata kunci berbahaya (`DROP`, `ALTER`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `GRANT`, dll.) diblokir di sisi backend. |
 | **Statement Timeout** | Query mahasiswa dibatalkan otomatis jika durasi eksekusinya melebihi 3 detik (mencegah DoS / Cartesian join tak terbatas). |
 | **Pendeteksi Blur Tab** | Jika mahasiswa berpindah jendela/tab browser, sistem otomatis mencatat peringatan dan menghitung frekuensi perpindahan tab di dashboard pengawas. |
+| **Internal Web Dialog** | Konfirmasi keluar menggunakan modal DOM internal web (bukan `window.confirm` bawaan browser) untuk mencegah false-positive deteksi window blur saat mahasiswa menekan tombol keluar ujian. |
 
 ---
 

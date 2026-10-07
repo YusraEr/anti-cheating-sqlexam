@@ -788,6 +788,161 @@ def export_submissions_zip_bytes() -> bytes:
     zip_buffer.seek(0)
     return zip_buffer.getvalue()
 
+def export_all_logs_csv() -> str:
+    """Mengekspor seluruh riwayat log aktivitas ujian sistem ke format CSV."""
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT 
+            l.id,
+            l.timestamp,
+            COALESCE(u.nim, '-') AS nim,
+            COALESCE(u.name, 'Sistem / Pengawas') AS name,
+            COALESCE(u.ip_address, '-') AS ip_address,
+            l.action_type,
+            COALESCE(l.details, '-') AS details
+        FROM exam_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+        ORDER BY l.id ASC;
+        """
+    )
+    rows = cur.fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID Log", 
+        "Waktu", 
+        "NIM", 
+        "Nama Mahasiswa", 
+        "IP Address", 
+        "Tipe Aksi", 
+        "Detail Aktivitas"
+    ])
+    for r in rows:
+        writer.writerow([
+            r["id"],
+            r["timestamp"],
+            r["nim"],
+            r["name"],
+            r["ip_address"],
+            r["action_type"],
+            r["details"]
+        ])
+    return output.getvalue()
+
+def export_tab_switches_csv() -> str:
+    """
+    Mengekspor rekapitulasi data perpindahan tab & fokus jendela mahasiswa ke format CSV.
+    Menampilkan seluruh mahasiswa beserta jumlah peringatan dan riwayat waktu kejadian kronologis.
+    """
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    
+    cur.execute(
+        """
+        SELECT 
+            u.id,
+            u.nim,
+            u.name,
+            u.ip_address,
+            u.status,
+            u.last_active,
+            (
+                SELECT COUNT(*) 
+                FROM exam_logs l 
+                WHERE l.user_id = u.id AND l.action_type = 'blur_tab'
+            ) AS tab_switches
+        FROM users u
+        ORDER BY tab_switches DESC, u.nim ASC;
+        """
+    )
+    users = cur.fetchall()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "NIM", 
+        "Nama Mahasiswa", 
+        "IP Address", 
+        "Total Peringatan Tab", 
+        "Status Sesi",
+        "Waktu Kejadian", 
+        "Aksi", 
+        "Detail Aktivitas"
+    ])
+
+    for u in users:
+        user_id = u["id"]
+        nim = u["nim"]
+        name = u["name"]
+        ip = u["ip_address"] or "-"
+        switches_count = u["tab_switches"]
+        status = u["status"] or "offline"
+
+        cur.execute(
+            """
+            SELECT action_type, details, timestamp
+            FROM exam_logs
+            WHERE user_id = ? AND action_type IN ('blur_tab', 'focus_tab')
+            ORDER BY id ASC;
+            """,
+            (user_id,)
+        )
+        logs = cur.fetchall()
+
+        if logs:
+            for l in logs:
+                writer.writerow([
+                    nim,
+                    name,
+                    ip,
+                    switches_count,
+                    status,
+                    l["timestamp"],
+                    l["action_type"],
+                    l["details"]
+                ])
+        else:
+            writer.writerow([
+                nim,
+                name,
+                ip,
+                0,
+                status,
+                "-",
+                "NIHIL",
+                "Tidak ada catatan perpindahan tab (tertib)"
+            ])
+
+    # Cek apakah ada log perpindahan tab tanpa user_id
+    cur.execute(
+        """
+        SELECT action_type, details, timestamp
+        FROM exam_logs
+        WHERE user_id IS NULL AND action_type IN ('blur_tab', 'focus_tab')
+        ORDER BY id ASC;
+        """
+    )
+    anon_logs = cur.fetchall()
+    for l in anon_logs:
+        writer.writerow([
+            "-",
+            "Anonim / Sesi Tidak Valid",
+            "-",
+            "-",
+            "-",
+            l["timestamp"],
+            l["action_type"],
+            l["details"]
+        ])
+
+    conn.close()
+    return output.getvalue()
+
+
 # ==============================================================================
 # PostgreSQL Exam Database (Sandbox & Execution Engine)
 # ==============================================================================

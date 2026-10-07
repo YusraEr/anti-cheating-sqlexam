@@ -29,9 +29,9 @@
             <div class="user-tag" title="Alamat IP Perangkat Anda">
                 <code>{{ user.ip_address }}</code>
             </div>
-            <a href="/logout" class="btn btn-secondary btn-sm" onclick="return confirm('Apakah Anda yakin ingin keluar dari sesi ujian?');">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-logout-trigger" onclick="openExitModal()">
                 Keluar
-            </a>
+            </button>
         </div>
     </header>
 
@@ -135,12 +135,61 @@
 
     </main>
 
+    <!-- Modal Internal: Konfirmasi Keluar Ujian -->
+    <div class="modal-backdrop" id="exit-confirm-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="exit-modal-title" onclick="if(event.target===this)closeExitModal();">
+        <div class="modal-dialog" style="max-width: 440px;" onclick="event.stopPropagation();">
+            <div class="modal-header">
+                <h3 id="exit-modal-title" style="font-size: 1.05rem; color: var(--text-main); margin: 0;">Konfirmasi Keluar Ujian</h3>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-exit-cancel-x" onclick="closeExitModal()" aria-label="Tutup" style="padding: 0.2rem 0.5rem; font-size: 1.1rem; line-height: 1;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 0.75rem; color: var(--text-main); font-size: 0.95rem;">
+                    Apakah Anda yakin ingin keluar dari sesi ujian praktikum?
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; padding: 0.75rem; border-radius: var(--radius-sm);">
+                    <p style="font-size: 0.85rem; color: #fca5a5; margin: 0;">
+                        Pastikan seluruh jawaban telah Anda simpan dengan menekan <strong>Submit Answer</strong> sebelum keluar. Sesi ujian Anda pada perangkat ini akan diakhiri.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btn-exit-cancel" onclick="closeExitModal()">Batal</button>
+                <button type="button" class="btn btn-danger" id="btn-exit-proceed" onclick="confirmExitExam()">Ya, Keluar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Inline Controller Modal (Menjamin Berfungsi di Safari Tanpa Terkendala Cache) -->
+    <script>
+        function openExitModal() {
+            var m = document.getElementById("exit-confirm-modal");
+            if (m) {
+                m.style.display = "flex";
+            }
+        }
+        function closeExitModal() {
+            var m = document.getElementById("exit-confirm-modal");
+            if (m) {
+                m.style.display = "none";
+            }
+        }
+        function confirmExitExam() {
+            window.isLoggingOut = true;
+            window.location.href = "/logout";
+        }
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") {
+                closeExitModal();
+            }
+        });
+    </script>
+
     <!-- 100% Offline JavaScript Modules -->
     <script src="/static/vendor/codemirror/lib/codemirror.js"></script>
     <script src="/static/vendor/codemirror/mode/sql/sql.js"></script>
     <script src="/static/vendor/codemirror/addon/hint/show-hint.js"></script>
     <script src="/static/vendor/codemirror/addon/hint/sql-hint.js"></script>
-    <script src="/static/js/student.js"></script>
+    <script src="/static/js/student.js?v=2"></script>
 
 </body>
 </html>

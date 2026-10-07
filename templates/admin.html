@@ -201,11 +201,19 @@
                         <p style="font-size: 0.85rem;">Catatan kronologis login, submit, serta deteksi perpindahan
                             jendela/tab.</p>
                     </div>
-                    <div style="display: flex; gap: 0.5rem;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <a href="/api/admin/export/logs-csv" class="btn btn-primary btn-sm" id="btn-download-logs-tab4" download="rekap_log_aktivitas.csv"
+                            title="Download seluruh riwayat log aktivitas dalam format CSV">
+                            Download Rekap Log (CSV)
+                        </a>
+                        <a href="/api/admin/export/tab-switches-csv" class="btn btn-warning btn-sm" id="btn-download-tab-switches-tab4" download="rekap_perpindahan_tab.csv"
+                            title="Download rekap riwayat dan frekuensi perpindahan tab mahasiswa dalam format CSV">
+                            Download Rekap Perpindahan Tab (CSV)
+                        </a>
                         <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-logs">
                             Refresh Log
                         </button>
-                        <button type="button" class="btn btn-warning btn-sm" id="btn-clear-logs"
+                        <button type="button" class="btn btn-danger btn-sm" id="btn-clear-logs"
                             title="Hapus seluruh riwayat log aktivitas ujian">
                             Bersihkan Semua Log
                         </button>
@@ -250,9 +258,9 @@
                             Berisi tabel seluruh jawaban mahasiswa (NIM, Nama, Nomor Soal, Bobot, Query Jawaban, Waktu
                             Submit) yang siap dibuka di Microsoft Excel atau LibreOffice Calc.
                         </p>
-                        <button type="button" class="btn btn-primary" id="btn-export-csv" style="width: 100%;">
+                        <a href="/api/admin/export/csv" class="btn btn-primary" id="btn-export-csv" download="hasil_ujian_praktikum.csv" style="width: 100%; text-align: center;">
                             Download CSV Hasil Ujian
-                        </button>
+                        </a>
                     </div>
 
                     <div
@@ -264,9 +272,33 @@
                             diformat
                             rapi.
                         </p>
-                        <button type="button" class="btn btn-success" id="btn-export-zip" style="width: 100%;">
+                        <a href="/api/admin/export/zip" class="btn btn-success" id="btn-export-zip" download="jawaban_sql_mahasiswa.zip" style="width: 100%; text-align: center;">
                             Download ZIP Berkas .SQL
-                        </button>
+                        </a>
+                    </div>
+
+                    <div
+                        style="background: #0f172a; border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
+                        <h3 style="font-size: 1rem; margin-bottom: 0.4rem;">Rekap Log Aktivitas Sistem (CSV)</h3>
+                        <p style="font-size: 0.85rem; margin-bottom: 1rem;">
+                            Berisi seluruh rekaman kronologis aktivitas sistem ujian (login, logout, submit jawaban,
+                            eksekusi query, reset sesi, pembaruan master key, dll) untuk keperluan audit pengawasan lengkap.
+                        </p>
+                        <a href="/api/admin/export/logs-csv" class="btn btn-primary" id="btn-export-logs-csv" download="rekap_log_aktivitas.csv" style="width: 100%; text-align: center;">
+                            Download Rekap Log (CSV)
+                        </a>
+                    </div>
+
+                    <div
+                        style="background: #0f172a; border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
+                        <h3 style="font-size: 1rem; margin-bottom: 0.4rem;">Rekap Perpindahan Tab & Kejujuran (CSV)</h3>
+                        <p style="font-size: 0.85rem; margin-bottom: 1rem;">
+                            Berisi rekapitulasi data mahasiswa yang berpindah tab atau kehilangan fokus jendela ujian,
+                            lengkap dengan frekuensi pelanggaran dan waktu kejadian masing-masing.
+                        </p>
+                        <a href="/api/admin/export/tab-switches-csv" class="btn btn-warning" id="btn-export-tab-switches-csv" download="rekap_perpindahan_tab.csv" style="width: 100%; text-align: center;">
+                            Download Rekap Perpindahan Tab (CSV)
+                        </a>
                     </div>
 
                 </div>
@@ -401,7 +433,7 @@
         </div>
     </div>
 
-    <script src="/static/js/admin.js"></script>
+    <script src="/static/js/admin.js?v=2"></script>
 
 </body>
 

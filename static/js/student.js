@@ -17,6 +17,7 @@ let submissionsMap = {};
 let studentNim = "";
 let studentSessionToken = "";
 let heartbeatInterval = null;
+let isLoggingOut = false;
 
 // Initialize when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
@@ -25,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initCodeMirror();
     setupAntiCheat();
+    setupExitModal();
     loadQuestions();
     loadSchema();
     startHeartbeat();
@@ -89,6 +91,7 @@ function setupAntiCheat() {
 
     // Detect tab/window switches
     document.addEventListener("visibilitychange", () => {
+        if (isLoggingOut) return;
         if (document.hidden) {
             showToast("Peringatan: Berpindah tab atau aplikasi dicatat oleh sistem!", "danger");
             logCheatingAction("blur_tab", "Mahasiswa memindahkan fokus tab atau keluar jendela ujian");
@@ -98,8 +101,60 @@ function setupAntiCheat() {
     });
 
     window.addEventListener("blur", () => {
+        if (isLoggingOut) return;
         logCheatingAction("blur_tab", "Window blur terdeteksi");
     });
+}
+
+function setupExitModal() {
+    const triggerBtn = document.getElementById("btn-logout-trigger");
+    const modal = document.getElementById("exit-confirm-modal");
+    const cancelBtn = document.getElementById("btn-exit-cancel");
+    const cancelXBtn = document.getElementById("btn-exit-cancel-x");
+    const proceedBtn = document.getElementById("btn-exit-proceed");
+
+    if (!triggerBtn || !modal) return;
+
+    function openModal() {
+        modal.style.display = "flex";
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+    }
+
+    triggerBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        openModal();
+    });
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", closeModal);
+    }
+    if (cancelXBtn) {
+        cancelXBtn.addEventListener("click", closeModal);
+    }
+
+    // Close when clicking directly on the backdrop
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Close on ESC key
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+            closeModal();
+        }
+    });
+
+    // Set flag when student confirms exit so navigation does not fire false blur warning
+    if (proceedBtn) {
+        proceedBtn.addEventListener("click", () => {
+            isLoggingOut = true;
+        });
+    }
 }
 
 async function logCheatingAction(actionType, details) {

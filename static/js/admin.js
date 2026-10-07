@@ -42,6 +42,20 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "/api/admin/export/zip";
     });
 
+    // Export Rekap Log Aktivitas
+    const downloadLogs = () => {
+        window.location.href = "/api/admin/export/logs-csv";
+    };
+    document.getElementById("btn-download-logs-tab4")?.addEventListener("click", downloadLogs);
+    document.getElementById("btn-export-logs-csv")?.addEventListener("click", downloadLogs);
+
+    // Export Rekap Perpindahan Tab
+    const downloadTabSwitches = () => {
+        window.location.href = "/api/admin/export/tab-switches-csv";
+    };
+    document.getElementById("btn-download-tab-switches-tab4")?.addEventListener("click", downloadTabSwitches);
+    document.getElementById("btn-export-tab-switches-csv")?.addEventListener("click", downloadTabSwitches);
+
     // Custom SQL Upload Form
     document.getElementById("sql-upload-form")?.addEventListener("submit", handleSqlUpload);
 

@@ -50,6 +50,16 @@ app = FastAPI(title="Offline SQL Exam System", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
+@app.middleware("http")
+async def add_no_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    # Mencegah Safari dan browser lain meng-cache file JS/CSS atau halaman dinamis selama sesi ujian
+    if request.url.path.startswith("/static/") or request.url.path in ["/", "/exam", "/admin", "/login"]:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 # Master Key for Admin / Lecturer
 ADMIN_SESSION_TOKEN = "exam_admin_auth_token_secret_key"
 
@@ -468,9 +478,19 @@ async def api_admin_export_csv(request: Request):
         raise HTTPException(status_code=403, detail="Akses ditolak")
 
     csv_data = database.export_all_submissions_csv()
-    response = Response(content=csv_data, media_type="text/csv")
-    response.headers["Content-Disposition"] = "attachment; filename=hasil_ujian_praktikum.csv"
-    return response
+    csv_bytes = csv_data.encode("utf-8")
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="hasil_ujian_praktikum.csv"',
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Length": str(len(csv_bytes)),
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 @app.get("/api/admin/export/zip")
 async def api_admin_export_zip(request: Request):
@@ -478,9 +498,59 @@ async def api_admin_export_zip(request: Request):
         raise HTTPException(status_code=403, detail="Akses ditolak")
 
     zip_bytes = database.export_submissions_zip_bytes()
-    response = Response(content=zip_bytes, media_type="application/zip")
-    response.headers["Content-Disposition"] = "attachment; filename=jawaban_sql_mahasiswa.zip"
-    return response
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": 'attachment; filename="jawaban_sql_mahasiswa.zip"',
+            "Content-Type": "application/zip",
+            "Content-Length": str(len(zip_bytes)),
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+@app.get("/api/admin/export/logs-csv")
+async def api_admin_export_logs_csv(request: Request):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+
+    csv_data = database.export_all_logs_csv()
+    csv_bytes = csv_data.encode("utf-8")
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="rekap_log_aktivitas.csv"',
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Length": str(len(csv_bytes)),
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+@app.get("/api/admin/export/tab-switches-csv")
+async def api_admin_export_tab_switches_csv(request: Request):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+
+    csv_data = database.export_tab_switches_csv()
+    csv_bytes = csv_data.encode("utf-8")
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="rekap_perpindahan_tab.csv"',
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Length": str(len(csv_bytes)),
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
 
 # ==============================================================================
 # Main Runner Entry Point
