@@ -32,6 +32,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-clear-sessions")?.addEventListener("click", openClearSessionsModal);
     document.getElementById("btn-confirm-clear-sessions")?.addEventListener("click", executeClearSessions);
     document.getElementById("btn-add-question")?.addEventListener("click", openAddQuestionModal);
+    document.getElementById("btn-delete-all-questions")?.addEventListener("click", openDeleteAllQuestionsModal);
+    document.getElementById("btn-confirm-delete-all-questions")?.addEventListener("click", deleteAllQuestions);
+    document.getElementById("delete-all-confirm-input")?.addEventListener("input", (e) => {
+        const confirmBtn = document.getElementById("btn-confirm-delete-all-questions");
+        if (confirmBtn) confirmBtn.disabled = e.target.value.trim() !== "HAPUS SEMUA";
+    });
     document.getElementById("btn-reset-db")?.addEventListener("click", confirmResetDatabase);
     document.getElementById("btn-refresh-logs")?.addEventListener("click", loadLogsData);
     document.getElementById("btn-clear-logs")?.addEventListener("click", confirmClearLogs);
@@ -346,6 +352,26 @@ async function deleteQuestion(qId) {
         loadQuestionsData();
     } catch (err) {
         showToast("Gagal menghapus soal.", "danger");
+    }
+}
+
+function openDeleteAllQuestionsModal() {
+    const input = document.getElementById("delete-all-confirm-input");
+    const confirmBtn = document.getElementById("btn-confirm-delete-all-questions");
+    if (input) input.value = "";
+    if (confirmBtn) confirmBtn.disabled = true;
+    document.getElementById("delete-all-questions-modal").style.display = "flex";
+}
+
+async function deleteAllQuestions() {
+    try {
+        const res = await fetch("/api/admin/questions", { method: "DELETE" });
+        const data = await res.json();
+        document.getElementById("delete-all-questions-modal").style.display = "none";
+        showToast(data.message || "Seluruh soal berhasil dihapus.", "success");
+        loadQuestionsData();
+    } catch (err) {
+        showToast("Gagal menghapus semua soal.", "danger");
     }
 }
 

@@ -437,6 +437,13 @@ async def api_admin_delete_question(question_id: int, request: Request):
     database.delete_question(question_id)
     return {"status": "success", "message": "Soal ujian berhasil dihapus."}
 
+@app.delete("/api/admin/questions")
+async def api_admin_delete_all_questions(request: Request):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+    database.delete_all_questions()
+    return {"status": "success", "message": "Seluruh soal ujian berhasil dihapus."}
+
 @app.get("/api/admin/schema")
 async def api_admin_schema(request: Request):
     if not verify_admin_auth(request):

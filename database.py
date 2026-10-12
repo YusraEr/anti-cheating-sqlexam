@@ -576,6 +576,12 @@ def delete_question(question_id: int):
         conn.execute("DELETE FROM questions WHERE id = ?;", (question_id,))
     conn.close()
 
+def delete_all_questions():
+    conn = get_sqlite_conn()
+    with conn:
+        conn.execute("DELETE FROM questions;")
+    conn.close()
+
 # ------------------------------------------------------------------------------
 # Submissions Management
 # ------------------------------------------------------------------------------

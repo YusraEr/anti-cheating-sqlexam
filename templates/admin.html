@@ -130,7 +130,11 @@
                         <p style="font-size: 0.85rem;">Kelola pertanyaan, bobot poin, dan query kunci jawaban yang
                             diujikan.</p>
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn btn-danger btn-sm" id="btn-delete-all-questions"
+                            title="Hapus seluruh soal dari bank soal ujian">
+                            🗑 Hapus Semua Soal
+                        </button>
                         <button type="button" class="btn btn-primary btn-sm" id="btn-add-question">
                             + Tambah Soal Baru
                         </button>
@@ -335,6 +339,38 @@
                     onclick="document.getElementById('clear-sessions-modal').style.display='none'">Batal</button>
                 <button type="button" class="btn btn-danger" id="btn-confirm-clear-sessions">Ya, Bersihkan
                     Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Konfirmasi Hapus Semua Soal -->
+    <div class="modal-backdrop" id="delete-all-questions-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="delete-all-q-title">
+        <div class="modal-dialog" style="max-width: 460px;">
+            <div class="modal-header">
+                <h3 id="delete-all-q-title" style="color: #ef4444;">Hapus Seluruh Bank Soal</h3>
+                <button type="button" class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('delete-all-questions-modal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 0.75rem; color: #f1f5f9;">
+                    Tindakan ini akan <strong>menghapus seluruh soal ujian</strong> dari bank soal secara permanen.
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; padding: 0.75rem; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
+                    <p style="font-size: 0.85rem; color: #fca5a5; margin: 0;">
+                        <strong>Peringatan:</strong> Data soal yang dihapus tidak dapat dipulihkan.
+                        Submisi jawaban mahasiswa yang terkait juga akan terpengaruh.
+                    </p>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Ketik <code>HAPUS SEMUA</code> untuk mengkonfirmasi:</p>
+                <input type="text" id="delete-all-confirm-input" class="form-input"
+                    placeholder="HAPUS SEMUA" autocomplete="off"
+                    style="margin-top: 0.5rem;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                    onclick="document.getElementById('delete-all-questions-modal').style.display='none'">Batal</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-delete-all-questions"
+                    disabled>Ya, Hapus Semua</button>
             </div>
         </div>
     </div>

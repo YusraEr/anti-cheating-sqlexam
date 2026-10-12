@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     studentSessionToken = document.body.dataset.token || "";
 
     initCodeMirror();
+    initThemeSelector();
     setupAntiCheat();
     setupExitModal();
     loadQuestions();
@@ -76,6 +77,52 @@ function initCodeMirror() {
             CodeMirror.commands.autocomplete(cm, null, { completeSingle: false });
         }
     });
+}
+
+// ==============================================================================
+// 1b. Theme Selector
+// ==============================================================================
+const THEME_STORAGE_KEY = "exam_ide_theme";
+
+const POPULAR_THEMES = [
+    { value: "dracula",               label: "Dracula" },
+    { value: "monokai",               label: "Monokai" },
+    { value: "nord",                  label: "Nord" },
+    { value: "material-darker",       label: "Material Darker" },
+    { value: "darcula",               label: "Darcula (JetBrains)" },
+    { value: "gruvbox-dark",          label: "Gruvbox Dark" },
+    { value: "solarized dark",        label: "Solarized Dark" },
+    { value: "tomorrow-night-bright", label: "Tomorrow Night" },
+    { value: "ayu-dark",              label: "Ayu Dark" },
+    { value: "cobalt",                label: "Cobalt" },
+    { value: "oceanic-next",          label: "Oceanic Next" },
+    { value: "panda-syntax",          label: "Panda Syntax" },
+    { value: "night",                 label: "Night" },
+    { value: "twilight",              label: "Twilight" },
+];
+
+function initThemeSelector() {
+    const select = document.getElementById("theme-selector");
+    if (!select) return;
+
+    // Restore saved theme or fall back to dracula
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "dracula";
+    applyTheme(savedTheme);
+    select.value = savedTheme;
+
+    select.addEventListener("change", () => {
+        applyTheme(select.value);
+        localStorage.setItem(THEME_STORAGE_KEY, select.value);
+    });
+}
+
+function applyTheme(theme) {
+    if (!editor) return;
+    editor.setOption("theme", theme);
+
+    // Reflect the active theme name in the selector label attribute for CSS hooks
+    const select = document.getElementById("theme-selector");
+    if (select) select.value = theme;
 }
 
 // ==============================================================================
