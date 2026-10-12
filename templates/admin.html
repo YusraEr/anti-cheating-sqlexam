@@ -90,6 +90,39 @@
 
         <!-- Tab 1: Live Monitoring -->
         <section id="tab-monitoring" class="tab-pane">
+
+            <!-- Exam Control Card -->
+            <div class="admin-card" style="border-color: var(--border-strong); position: relative; overflow: hidden; margin-bottom: 1rem;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent));"></div>
+                <div class="admin-card-header">
+                    <div>
+                        <h2 style="font-size: 1.1rem;">Kontrol Ujian</h2>
+                        <p style="font-size: 0.85rem;">Buka atau tutup akses lembar soal untuk seluruh peserta.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-size: 0.78rem; color: var(--text-muted);">Status:</span>
+                            <span id="admin-exam-state-badge" class="status-badge badge-warning">Menunggu</span>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm" id="btn-exam-start"
+                            title="Buka lembar soal untuk semua peserta di waiting room">
+                            Mulai Ujian
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" id="btn-exam-stop"
+                            title="Tutup akses soal. Peserta kembali ke waiting room." disabled>
+                            Hentikan Ujian
+                        </button>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); align-items: center;">
+                    <div style="flex-shrink: 0;">
+                        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.2rem;">Di Waiting Room</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main);" id="admin-waiting-count">0</div>
+                    </div>
+                    <div id="admin-waiting-names" style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; flex: 1;"></div>
+                </div>
+            </div>
+
             <div class="admin-card">
                 <div class="admin-card-header">
                     <div>

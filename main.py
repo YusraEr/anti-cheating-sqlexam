@@ -135,7 +135,7 @@ async def index_route(request: Request):
     if token and nim:
         is_valid, user, _ = database.validate_student_session(nim, token, client_ip)
         if is_valid:
-            return RedirectResponse(url="/exam", status_code=status.HTTP_302_FOUND)
+            return RedirectResponse(url="/waiting", status_code=status.HTTP_302_FOUND)
 
     return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
@@ -174,10 +174,37 @@ async def handle_login(
             context={"error": error_msg, "nim_value": nim, "name_value": name}
         )
 
-    response = RedirectResponse(url="/exam", status_code=status.HTTP_302_FOUND)
+    response = RedirectResponse(url="/waiting", status_code=status.HTTP_302_FOUND)
     response.set_cookie(key="student_token", value=new_session_token, httponly=True)
     response.set_cookie(key="student_nim", value=nim, httponly=True)
     return response
+
+@app.get("/waiting", response_class=HTMLResponse)
+async def waiting_room_page(request: Request):
+    token = request.cookies.get("student_token")
+    nim = request.cookies.get("student_nim")
+    client_ip = get_client_ip(request)
+
+    if not token or not nim:
+        return RedirectResponse(url="/login?error=Silakan+login+terlebih+dahulu", status_code=status.HTTP_302_FOUND)
+
+    is_valid, user, reason = database.validate_student_session(nim, token, client_ip)
+    if not is_valid:
+        resp = RedirectResponse(url=f"/login?error={reason}", status_code=status.HTTP_302_FOUND)
+        resp.delete_cookie("student_token")
+        resp.delete_cookie("student_nim")
+        return resp
+
+    # If exam already active, send straight to exam
+    if database.get_exam_state() == "active":
+        return RedirectResponse(url="/exam", status_code=status.HTTP_302_FOUND)
+
+    database.mark_student_waiting(nim)
+    return templates.TemplateResponse(
+        request=request,
+        name="waiting_room.html",
+        context={"user": user}
+    )
 
 @app.get("/exam", response_class=HTMLResponse)
 async def exam_page(request: Request):
@@ -194,6 +221,10 @@ async def exam_page(request: Request):
         response.delete_cookie("student_token")
         response.delete_cookie("student_nim")
         return response
+
+    # Guard: if exam not active, redirect back to waiting room
+    if database.get_exam_state() != "active":
+        return RedirectResponse(url="/waiting", status_code=status.HTTP_302_FOUND)
 
     return templates.TemplateResponse(
         request=request,
@@ -443,6 +474,90 @@ async def api_admin_delete_all_questions(request: Request):
         raise HTTPException(status_code=403, detail="Akses ditolak")
     database.delete_all_questions()
     return {"status": "success", "message": "Seluruh soal ujian berhasil dihapus."}
+
+# ==============================================================================
+# Exam State & Waiting Room API
+# ==============================================================================
+
+@app.get("/api/exam/state")
+async def api_exam_state(request: Request):
+    """Public endpoint: any authenticated student can poll this."""
+    token = request.cookies.get("student_token")
+    nim = request.cookies.get("student_nim")
+    client_ip = get_client_ip(request)
+    if not token or not nim:
+        raise HTTPException(status_code=401, detail="Tidak terautentikasi.")
+    is_valid, _, _ = database.validate_student_session(nim, token, client_ip)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Sesi tidak valid.")
+    return {"state": database.get_exam_state()}
+
+@app.post("/api/admin/exam/start")
+async def api_admin_exam_start(request: Request):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+    database.set_exam_state("active")
+    database.clear_waiting_room_messages()
+    return {"status": "success", "message": "Ujian dimulai. Seluruh peserta akan diarahkan ke lembar soal."}
+
+@app.post("/api/admin/exam/stop")
+async def api_admin_exam_stop(request: Request):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+    database.set_exam_state("waiting")
+    return {"status": "success", "message": "Ujian dihentikan. Peserta tidak dapat mengakses soal."}
+
+@app.get("/api/waiting/participants")
+async def api_waiting_participants(request: Request):
+    token = request.cookies.get("student_token")
+    nim = request.cookies.get("student_nim")
+    client_ip = get_client_ip(request)
+    if not token or not nim:
+        raise HTTPException(status_code=401, detail="Tidak terautentikasi.")
+    is_valid, _, _ = database.validate_student_session(nim, token, client_ip)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Sesi tidak valid.")
+    participants = database.get_waiting_room_participants()
+    return {"participants": participants, "count": len(participants)}
+
+@app.get("/api/waiting/messages")
+async def api_waiting_messages(request: Request, since_id: int = 0):
+    token = request.cookies.get("student_token")
+    nim = request.cookies.get("student_nim")
+    client_ip = get_client_ip(request)
+    if not token or not nim:
+        raise HTTPException(status_code=401, detail="Tidak terautentikasi.")
+    is_valid, _, _ = database.validate_student_session(nim, token, client_ip)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Sesi tidak valid.")
+    messages = database.get_waiting_room_messages(since_id=since_id)
+    return {"messages": messages}
+
+class WaitingMessageRequest(BaseModel):
+    message: str
+
+@app.post("/api/waiting/messages")
+async def api_post_waiting_message(request: Request, body: WaitingMessageRequest):
+    token = request.cookies.get("student_token")
+    nim = request.cookies.get("student_nim")
+    client_ip = get_client_ip(request)
+    if not token or not nim:
+        raise HTTPException(status_code=401, detail="Tidak terautentikasi.")
+    is_valid, user, _ = database.validate_student_session(nim, token, client_ip)
+    if not is_valid or not user:
+        raise HTTPException(status_code=401, detail="Sesi tidak valid.")
+    msg = database.post_waiting_room_message(nim, user["name"], body.message)
+    if not msg:
+        raise HTTPException(status_code=400, detail="Pesan kosong atau terlalu panjang.")
+    return {"status": "ok", "message": msg}
+
+@app.get("/api/admin/waiting/participants")
+async def api_admin_waiting_participants(request: Request):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+    participants = database.get_waiting_room_participants()
+    exam_state = database.get_exam_state()
+    return {"participants": participants, "count": len(participants), "exam_state": exam_state}
 
 @app.get("/api/admin/schema")
 async def api_admin_schema(request: Request):

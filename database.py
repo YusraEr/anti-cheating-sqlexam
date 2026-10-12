@@ -97,6 +97,14 @@ def init_system_db():
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS waiting_room_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nim TEXT NOT NULL,
+            name TEXT NOT NULL,
+            message TEXT NOT NULL,
+            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
         """)
 
         # Insert or sync default master key
@@ -1407,3 +1415,102 @@ def verify_system_health() -> Dict[str, Any]:
         health["details"]["pg_student_error"] = str(e)
 
     return health
+
+# ==============================================================================
+# Waiting Room & Exam State Management
+# ==============================================================================
+
+def get_exam_state() -> str:
+    """Returns 'waiting' or 'active'. Defaults to 'waiting' if not set."""
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT value FROM system_settings WHERE key = 'exam_state';")
+    row = cur.fetchone()
+    conn.close()
+    return row["value"] if row else "waiting"
+
+def set_exam_state(state: str) -> None:
+    """Sets exam state to 'waiting' or 'active'."""
+    conn = get_sqlite_conn()
+    with conn:
+        conn.execute(
+            "INSERT INTO system_settings (key, value) VALUES ('exam_state', ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value;",
+            (state,)
+        )
+        action = "exam_started" if state == "active" else "exam_stopped"
+        label = "Ujian dimulai oleh admin." if state == "active" else "Ujian dihentikan oleh admin."
+        conn.execute(
+            "INSERT INTO exam_logs (action_type, details) VALUES (?, ?);",
+            (action, label)
+        )
+    conn.close()
+
+def get_waiting_room_participants() -> list:
+    """Returns list of students currently online (in waiting room or exam)."""
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT nim, name, ip_address, last_active, status
+        FROM users
+        WHERE status IN ('online', 'waiting')
+        ORDER BY last_active DESC;
+        """
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def mark_student_waiting(nim: str) -> None:
+    """Marks a student as 'waiting' (in waiting room, not yet in exam)."""
+    conn = get_sqlite_conn()
+    with conn:
+        conn.execute(
+            "UPDATE users SET status = 'waiting', last_active = CURRENT_TIMESTAMP WHERE nim = ?;",
+            (nim,)
+        )
+    conn.close()
+
+def get_waiting_room_messages(since_id: int = 0, limit: int = 50) -> list:
+    """Returns chat messages newer than since_id."""
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT id, nim, name, message, sent_at
+        FROM waiting_room_messages
+        WHERE id > ?
+        ORDER BY id ASC
+        LIMIT ?;
+        """,
+        (since_id, limit)
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def post_waiting_room_message(nim: str, name: str, message: str) -> dict:
+    """Inserts a new chat message and returns it."""
+    message = message.strip()[:300]
+    if not message:
+        return {}
+    conn = get_sqlite_conn()
+    with conn:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO waiting_room_messages (nim, name, message) VALUES (?, ?, ?);",
+            (nim, name, message)
+        )
+        msg_id = cur.lastrowid
+    cur.execute("SELECT id, nim, name, message, sent_at FROM waiting_room_messages WHERE id = ?;", (msg_id,))
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else {}
+
+def clear_waiting_room_messages() -> None:
+    """Clears all waiting room chat messages (called when exam starts)."""
+    conn = get_sqlite_conn()
+    with conn:
+        conn.execute("DELETE FROM waiting_room_messages;")
+    conn.close()

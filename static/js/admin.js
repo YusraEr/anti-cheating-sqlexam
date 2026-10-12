@@ -52,8 +52,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 6000);
 
+    // Waiting room polling every 4 seconds
+    loadWaitingRoomPanel();
+    setInterval(loadWaitingRoomPanel, 4000);
+
     // Event Bindings
     document.getElementById("btn-refresh-monitor")?.addEventListener("click", loadDashboardData);
+    document.getElementById("btn-exam-start")?.addEventListener("click", startExam);
+    document.getElementById("btn-exam-stop")?.addEventListener("click", stopExam);
     document.getElementById("btn-stop-all-sessions")?.addEventListener("click", confirmStopAllSessions);
     document.getElementById("btn-clear-sessions")?.addEventListener("click", openClearSessionsModal);
     document.getElementById("btn-confirm-clear-sessions")?.addEventListener("click", executeClearSessions);
@@ -95,6 +101,97 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-open-change-pw-modal")?.addEventListener("click", openChangePasswordModal);
     document.getElementById("form-change-password")?.addEventListener("submit", handleChangePassword);
 });
+
+// ==============================================================================
+// Exam Control & Waiting Room Panel
+// ==============================================================================
+
+async function loadWaitingRoomPanel() {
+    try {
+        const res = await fetch("/api/admin/waiting/participants");
+        if (!res.ok) return;
+        const data = await res.json();
+        const count = data.count || 0;
+        const participants = data.participants || [];
+        const examState = data.exam_state || "waiting";
+
+        const countEl = document.getElementById("admin-waiting-count");
+        const namesEl = document.getElementById("admin-waiting-names");
+
+        if (countEl) countEl.textContent = count;
+
+        if (namesEl) {
+            namesEl.innerHTML = "";
+            participants.slice(0, 20).forEach(p => {
+                const pill = document.createElement("span");
+                pill.style.cssText = "background:var(--bg-surface-elevated);border:1px solid var(--border-subtle);border-radius:999px;padding:0.15rem 0.55rem;font-size:0.72rem;color:var(--text-main);";
+                pill.textContent = p.name;
+                namesEl.appendChild(pill);
+            });
+            if (participants.length > 20) {
+                const more = document.createElement("span");
+                more.style.cssText = "font-size:0.72rem;color:var(--text-muted);";
+                more.textContent = `+${participants.length - 20} lainnya`;
+                namesEl.appendChild(more);
+            }
+        }
+
+        updateExamStateBadge(examState);
+    } catch (_) {}
+}
+
+function updateExamStateBadge(state) {
+    const badge = document.getElementById("admin-exam-state-badge");
+    const startBtn = document.getElementById("btn-exam-start");
+    const stopBtn = document.getElementById("btn-exam-stop");
+
+    if (state === "active") {
+        if (badge) {
+            badge.textContent = "Aktif";
+            badge.className = "status-badge badge-online";
+        }
+        if (startBtn) startBtn.disabled = true;
+        if (stopBtn) stopBtn.disabled = false;
+    } else {
+        if (badge) {
+            badge.textContent = "Menunggu";
+            badge.className = "status-badge badge-warning";
+        }
+        if (startBtn) startBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+    }
+}
+
+async function startExam() {
+    const startBtn = document.getElementById("btn-exam-start");
+    if (startBtn) startBtn.disabled = true;
+    try {
+        const res = await fetch("/api/admin/exam/start", { method: "POST" });
+        const data = await res.json();
+        showToast(data.message || "Ujian dimulai.", "success");
+        updateExamStateBadge("active");
+        loadWaitingRoomPanel();
+    } catch (_) {
+        showToast("Gagal memulai ujian.", "danger");
+        if (startBtn) startBtn.disabled = false;
+    }
+}
+
+async function stopExam() {
+    if (!confirm("Hentikan ujian? Peserta yang sedang mengerjakan akan dikembalikan ke waiting room.")) return;
+    const stopBtn = document.getElementById("btn-exam-stop");
+    if (stopBtn) stopBtn.disabled = true;
+    try {
+        const res = await fetch("/api/admin/exam/stop", { method: "POST" });
+        const data = await res.json();
+        showToast(data.message || "Ujian dihentikan.", "success");
+        updateExamStateBadge("waiting");
+        loadWaitingRoomPanel();
+    } catch (_) {
+        showToast("Gagal menghentikan ujian.", "danger");
+        if (stopBtn) stopBtn.disabled = false;
+    }
+}
 
 // ==============================================================================
 // 1. Navigation Tabs
