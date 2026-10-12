@@ -1447,14 +1447,15 @@ def set_exam_state(state: str) -> None:
     conn.close()
 
 def get_waiting_room_participants() -> list:
-    """Returns list of students currently online (in waiting room or exam)."""
+    """Returns students currently active in the waiting room (heartbeat within 20s)."""
     conn = get_sqlite_conn()
     cur = conn.cursor()
     cur.execute(
         """
         SELECT nim, name, ip_address, last_active, status
         FROM users
-        WHERE status IN ('online', 'waiting')
+        WHERE status = 'waiting'
+          AND last_active >= datetime('now', '-20 seconds')
         ORDER BY last_active DESC;
         """
     )
@@ -1463,11 +1464,31 @@ def get_waiting_room_participants() -> list:
     return [dict(r) for r in rows]
 
 def mark_student_waiting(nim: str) -> None:
-    """Marks a student as 'waiting' (in waiting room, not yet in exam)."""
+    """Marks a student as 'waiting' with fresh last_active timestamp."""
     conn = get_sqlite_conn()
     with conn:
         conn.execute(
             "UPDATE users SET status = 'waiting', last_active = CURRENT_TIMESTAMP WHERE nim = ?;",
+            (nim,)
+        )
+    conn.close()
+
+def heartbeat_student_waiting(nim: str) -> None:
+    """Touch last_active for a student in the waiting room without changing status."""
+    conn = get_sqlite_conn()
+    with conn:
+        conn.execute(
+            "UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE nim = ? AND status = 'waiting';",
+            (nim,)
+        )
+    conn.close()
+
+def mark_student_in_exam(nim: str) -> None:
+    """Marks a student as 'online' (in exam) when they enter the exam page."""
+    conn = get_sqlite_conn()
+    with conn:
+        conn.execute(
+            "UPDATE users SET status = 'online', last_active = CURRENT_TIMESTAMP WHERE nim = ?;",
             (nim,)
         )
     conn.close()

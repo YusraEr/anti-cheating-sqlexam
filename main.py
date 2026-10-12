@@ -226,6 +226,9 @@ async def exam_page(request: Request):
     if database.get_exam_state() != "active":
         return RedirectResponse(url="/waiting", status_code=status.HTTP_302_FOUND)
 
+    # Mark student as 'online' (in exam) so they leave the waiting room list
+    database.mark_student_in_exam(nim)
+
     return templates.TemplateResponse(
         request=request,
         name="student.html",
@@ -550,6 +553,20 @@ async def api_post_waiting_message(request: Request, body: WaitingMessageRequest
     if not msg:
         raise HTTPException(status_code=400, detail="Pesan kosong atau terlalu panjang.")
     return {"status": "ok", "message": msg}
+
+@app.post("/api/waiting/heartbeat")
+async def api_waiting_heartbeat(request: Request):
+    """Called by the browser every 10s while on the waiting room page."""
+    token = request.cookies.get("student_token")
+    nim = request.cookies.get("student_nim")
+    client_ip = get_client_ip(request)
+    if not token or not nim:
+        raise HTTPException(status_code=401, detail="Tidak terautentikasi.")
+    is_valid, _, _ = database.validate_student_session(nim, token, client_ip)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Sesi tidak valid.")
+    database.heartbeat_student_waiting(nim)
+    return {"ok": True}
 
 @app.get("/api/admin/waiting/participants")
 async def api_admin_waiting_participants(request: Request):

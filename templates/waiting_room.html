@@ -1,450 +1,80 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="dracula">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Waiting Room - Ujian Praktikum Basis Data</title>
-    <script>(function () { var t = localStorage.getItem("exam_global_theme") || "dracula"; document.documentElement.setAttribute("data-theme", t); })();</script>
+    <script>(function(){var t=localStorage.getItem("exam_global_theme")||"dracula";document.documentElement.setAttribute("data-theme",t);})()</script>
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
-        /* =============================================
-           Waiting Room Layout
-           ============================================= */
-        .wr-root {
-            min-height: 100vh;
-            display: grid;
-            grid-template-rows: auto 1fr;
-            background-color: var(--bg-app);
-        }
-
-        .wr-body {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 0;
-            height: calc(100vh - 61px);
-            overflow: hidden;
-        }
-
-        /* ---- Left: Status + Participants ---- */
-        .wr-main {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
-        .wr-status-card {
-            background-color: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 2rem 2rem 1.75rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .wr-status-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-        }
-
-        .wr-pulse-ring {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background-color: var(--warning-bg);
-            border: 2px solid var(--warning);
-            margin-bottom: 1rem;
-            position: relative;
-            animation: pulse-ring 2s ease-in-out infinite;
-        }
-
-        .wr-pulse-ring.active {
-            background-color: var(--success-bg);
-            border-color: var(--success);
-            animation: none;
-        }
-
-        @keyframes pulse-ring {
-            0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--warning) 30%, transparent); }
-            50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--warning) 0%, transparent); }
-        }
-
-        .wr-pulse-icon {
-            font-size: 2rem;
-            line-height: 1;
-        }
-
-        .wr-status-title {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin-bottom: 0.35rem;
-        }
-
-        .wr-status-desc {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin: 0;
-        }
-
-        .wr-dot-loader {
-            display: inline-flex;
-            gap: 5px;
-            margin-top: 1rem;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .wr-dot-loader span {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background-color: var(--warning);
-            animation: dot-bounce 1.2s ease-in-out infinite;
-        }
-
-        .wr-dot-loader span:nth-child(2) { animation-delay: 0.2s; }
-        .wr-dot-loader span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes dot-bounce {
-            0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
-            40% { transform: translateY(-7px); opacity: 1; }
-        }
-
-        /* ---- Participants Grid ---- */
-        .wr-section-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            color: var(--text-muted);
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .wr-count-badge {
-            background-color: var(--bg-surface-elevated);
-            color: var(--text-main);
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 0.1rem 0.45rem;
-            border-radius: 999px;
-            border: 1px solid var(--border-subtle);
-            min-width: 22px;
-            text-align: center;
-        }
-
-        .wr-participants-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 0.65rem;
-        }
-
-        .wr-participant-card {
-            background-color: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 0.75rem 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            transition: border-color 0.2s ease, transform 0.15s ease;
-            animation: card-appear 0.3s ease-out;
-        }
-
-        .wr-participant-card.is-me {
-            border-color: var(--accent);
-            background-color: color-mix(in srgb, var(--accent) 8%, var(--bg-surface));
-        }
-
-        @keyframes card-appear {
-            from { opacity: 0; transform: scale(0.92); }
-            to   { opacity: 1; transform: scale(1); }
-        }
-
-        .wr-avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            font-weight: 700;
-            flex-shrink: 0;
-            background-color: var(--bg-surface-elevated);
-            color: var(--accent);
-            border: 1px solid var(--border-subtle);
-        }
-
-        .wr-participant-info {
-            min-width: 0;
-        }
-
-        .wr-participant-name {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .wr-participant-nim {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* ---- Right: Chat ---- */
-        .wr-chat-panel {
-            background-color: var(--bg-surface);
-            border-left: 1px solid var(--border-subtle);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .wr-chat-header {
-            padding: 0.85rem 1rem;
-            border-bottom: 1px solid var(--border-subtle);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .wr-chat-header-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .wr-chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0.75rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.55rem;
-        }
-
-        .wr-chat-messages::-webkit-scrollbar {
-            width: 4px;
-        }
-        .wr-chat-messages::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .wr-chat-messages::-webkit-scrollbar-thumb {
-            background-color: var(--border-subtle);
-            border-radius: 4px;
-        }
-
-        .wr-msg {
-            display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
-            animation: msg-in 0.25s ease-out;
-        }
-
-        @keyframes msg-in {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .wr-msg.is-mine {
-            align-items: flex-end;
-        }
-
-        .wr-msg-meta {
-            font-size: 0.67rem;
-            color: var(--text-subtle);
-            padding: 0 0.4rem;
-            display: flex;
-            gap: 0.35rem;
-        }
-
-        .wr-msg-meta strong {
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .wr-msg-bubble {
-            max-width: 85%;
-            padding: 0.45rem 0.75rem;
-            border-radius: var(--radius-md);
-            font-size: 0.82rem;
-            line-height: 1.45;
-            word-break: break-word;
-            background-color: var(--bg-surface-elevated);
-            color: var(--text-main);
-            border: 1px solid var(--border-subtle);
-        }
-
-        .wr-msg.is-mine .wr-msg-bubble {
-            background-color: var(--primary);
-            color: var(--primary-text);
-            border-color: transparent;
-        }
-
-        .wr-msg-system {
-            text-align: center;
-            font-size: 0.72rem;
-            color: var(--text-subtle);
-            padding: 0.2rem 0;
-        }
-
-        .wr-chat-input-row {
-            padding: 0.65rem 0.75rem;
-            border-top: 1px solid var(--border-subtle);
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-
-        .wr-chat-input {
-            flex: 1;
-            background-color: var(--bg-app);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 0.5rem 0.75rem;
-            font-size: 0.82rem;
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            outline: none;
-            transition: border-color 0.15s ease;
-            resize: none;
-            height: 36px;
-            overflow: hidden;
-        }
-
-        .wr-chat-input:focus {
-            border-color: var(--accent);
-        }
-
-        .wr-chat-input::placeholder {
-            color: var(--text-subtle);
-        }
-
-        .wr-chat-send-btn {
-            background-color: var(--primary);
-            color: var(--primary-text);
-            border: none;
-            border-radius: var(--radius-md);
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: filter 0.15s ease;
-            font-size: 0.9rem;
-        }
-
-        .wr-chat-send-btn:hover {
-            filter: brightness(1.15);
-        }
-
-        .wr-chat-send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* ---- Start Banner (when exam starts) ---- */
-        .wr-start-banner {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0,0,0,0.75);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 1rem;
-            text-align: center;
-        }
-
-        .wr-start-banner.visible {
-            display: flex;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-        }
-
-        .wr-start-card {
-            background-color: var(--bg-surface);
-            border: 2px solid var(--success);
-            border-radius: var(--radius-lg);
-            padding: 2.5rem 3rem;
-            box-shadow: 0 0 60px color-mix(in srgb, var(--success) 25%, transparent);
-            max-width: 380px;
-        }
-
-        .wr-start-icon {
-            font-size: 3rem;
-            line-height: 1;
-            margin-bottom: 0.75rem;
-        }
-
-        .wr-start-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--success);
-            margin-bottom: 0.4rem;
-        }
-
-        .wr-start-desc {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .wr-countdown {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--text-main);
-            font-family: var(--font-mono);
-        }
-
-        /* Responsive */
-        @media (max-width: 860px) {
-            .wr-body {
-                grid-template-columns: 1fr;
-                grid-template-rows: 1fr auto;
-                height: auto;
-            }
-            .wr-chat-panel {
-                border-left: none;
-                border-top: 1px solid var(--border-subtle);
-                height: 300px;
-            }
-        }
+        .wr-root{min-height:100vh;display:grid;grid-template-rows:auto 1fr;background-color:var(--bg-app);}
+        .wr-body{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 61px);overflow:hidden;}
+        .wr-main{display:flex;flex-direction:column;gap:1.25rem;padding:1.5rem;overflow-y:auto;}
+        .wr-status-card{background-color:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:2rem 2rem 1.75rem;text-align:center;position:relative;overflow:hidden;}
+        .wr-status-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--accent));}
+        .wr-pulse-ring{display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background-color:color-mix(in srgb,var(--warning) 12%,transparent);border:2px solid var(--warning);margin-bottom:1rem;animation:pulse-ring 2s ease-in-out infinite;}
+        .wr-pulse-ring.active{background-color:color-mix(in srgb,var(--success) 12%,transparent);border-color:var(--success);animation:none;}
+        @keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--warning) 30%,transparent);}50%{box-shadow:0 0 0 14px color-mix(in srgb,var(--warning) 0%,transparent);}}
+        .wr-status-title{font-size:1.35rem;font-weight:700;color:var(--text-main);margin-bottom:.35rem;}
+        .wr-status-desc{font-size:.9rem;color:var(--text-muted);margin:0;}
+        .wr-dot-loader{display:inline-flex;gap:5px;margin-top:1rem;align-items:center;justify-content:center;}
+        .wr-dot-loader span{width:7px;height:7px;border-radius:50%;background-color:var(--warning);animation:dot-bounce 1.2s ease-in-out infinite;}
+        .wr-dot-loader span:nth-child(2){animation-delay:.2s;}.wr-dot-loader span:nth-child(3){animation-delay:.4s;}
+        @keyframes dot-bounce{0%,80%,100%{transform:translateY(0);opacity:.5;}40%{transform:translateY(-7px);opacity:1;}}
+        .wr-section-title{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
+        .wr-count-badge{background-color:var(--bg-surface-elevated);color:var(--text-main);font-size:.7rem;font-weight:700;padding:.1rem .45rem;border-radius:999px;border:1px solid var(--border-subtle);min-width:22px;text-align:center;}
+        .wr-participants-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:.65rem;}
+        .wr-participant-card{background-color:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:.75rem .85rem;display:flex;align-items:center;gap:.65rem;transition:border-color .2s ease;animation:card-appear .3s ease-out;}
+        .wr-participant-card.is-me{border-color:var(--accent);background-color:color-mix(in srgb,var(--accent) 8%,var(--bg-surface));}
+        @keyframes card-appear{from{opacity:0;transform:scale(.93);}to{opacity:1;transform:scale(1);}}
+        .wr-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;flex-shrink:0;background-color:var(--bg-surface-elevated);color:var(--accent);border:1px solid var(--border-subtle);}
+        .wr-participant-info{min-width:0;}
+        .wr-participant-name{font-size:.8rem;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .wr-participant-nim{font-size:.7rem;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .wr-empty-state{color:var(--text-subtle);font-size:.85rem;padding:.25rem 0;}
+        .wr-chat-panel{background-color:var(--bg-surface);border-left:1px solid var(--border-subtle);display:flex;flex-direction:column;height:100%;}
+        .wr-chat-header{padding:.85rem 1rem;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:.5rem;}
+        .wr-chat-header-title{font-size:.875rem;font-weight:600;color:var(--text-main);}
+        .wr-chat-messages{flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.55rem;}
+        .wr-chat-messages::-webkit-scrollbar{width:4px;}.wr-chat-messages::-webkit-scrollbar-track{background:transparent;}.wr-chat-messages::-webkit-scrollbar-thumb{background-color:var(--border-subtle);border-radius:4px;}
+        .wr-msg{display:flex;flex-direction:column;gap:.15rem;animation:msg-in .22s ease-out;}
+        @keyframes msg-in{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+        .wr-msg.is-mine{align-items:flex-end;}
+        .wr-msg-meta{font-size:.67rem;color:var(--text-subtle);padding:0 .4rem;display:flex;gap:.35rem;}
+        .wr-msg-meta strong{color:var(--text-muted);font-weight:600;}
+        .wr-msg-bubble{max-width:85%;padding:.45rem .75rem;border-radius:var(--radius-md);font-size:.82rem;line-height:1.45;word-break:break-word;background-color:var(--bg-surface-elevated);color:var(--text-main);border:1px solid var(--border-subtle);}
+        .wr-msg.is-mine .wr-msg-bubble{background-color:var(--primary);color:var(--primary-text);border-color:transparent;}
+        .wr-msg-system{text-align:center;font-size:.72rem;color:var(--text-subtle);padding:.2rem 0;}
+        .wr-chat-input-row{padding:.65rem .75rem;border-top:1px solid var(--border-subtle);display:flex;gap:.5rem;align-items:center;}
+        .wr-chat-input{flex:1;background-color:var(--bg-app);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:.5rem .75rem;font-size:.82rem;color:var(--text-main);font-family:var(--font-sans);outline:none;transition:border-color .15s ease;height:36px;}
+        .wr-chat-input:focus{border-color:var(--accent);}.wr-chat-input::placeholder{color:var(--text-subtle);}
+        .wr-chat-send-btn{background-color:var(--primary);color:var(--primary-text);border:none;border-radius:var(--radius-md);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:filter .15s ease;}
+        .wr-chat-send-btn:hover{filter:brightness(1.15);}.wr-chat-send-btn:disabled{opacity:.45;cursor:not-allowed;}
+        .wr-start-banner{display:none;position:fixed;inset:0;background-color:rgba(0,0,0,.78);z-index:2000;align-items:center;justify-content:center;flex-direction:column;}
+        .wr-start-banner.visible{display:flex;animation:fadeIn .3s ease-out;}
+        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+        .wr-start-card{background-color:var(--bg-surface);border:2px solid var(--success);border-radius:var(--radius-lg);padding:2.5rem 3rem;box-shadow:0 0 60px color-mix(in srgb,var(--success) 22%,transparent);max-width:380px;text-align:center;}
+        .wr-start-icon-wrap{width:72px;height:72px;border-radius:50%;background-color:color-mix(in srgb,var(--success) 14%,transparent);border:2px solid var(--success);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+        .wr-start-title{font-size:1.5rem;font-weight:700;color:var(--success);margin-bottom:.4rem;}
+        .wr-start-desc{color:var(--text-muted);font-size:.9rem;margin-bottom:1.25rem;}
+        .wr-countdown{font-size:2.5rem;font-weight:700;color:var(--text-main);font-family:var(--font-mono);}
+        @media(max-width:860px){.wr-body{grid-template-columns:1fr;grid-template-rows:1fr auto;height:auto;}.wr-chat-panel{border-left:none;border-top:1px solid var(--border-subtle);height:300px;}}
     </style>
 </head>
 
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+    <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="icon-message-square" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="icon-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="icon-book-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+    <symbol id="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
+    <symbol id="icon-log-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+</svg>
+
 <body data-nim="{{ user.nim }}" data-token="{{ user.session_token }}">
 <div class="wr-root">
-
-    <!-- Header -->
     <header class="app-header">
         <div class="brand-wrapper">
             <span class="brand-logo-badge">EXAM IDE</span>
@@ -453,12 +83,14 @@
         <div class="header-meta">
             <div class="user-tag">
                 <span>NIM: <strong>{{ user.nim }}</strong></span>
-                <span style="color: var(--text-subtle);">|</span>
+                <span style="color:var(--text-subtle);">|</span>
                 <span>{{ user.name }}</span>
             </div>
-            <!-- Global Theme Switcher -->
             <div class="global-theme-switcher" title="Ganti tema tampilan">
-                <span class="global-theme-icon">Theme</span>
+                <span class="global-theme-icon">
+                    <svg width="14" height="14" style="display:inline-block;vertical-align:middle;"><use href="#icon-palette"/></svg>
+                    Theme
+                </span>
                 <select id="global-theme-select" class="global-theme-select" aria-label="Pilih Tema">
                     <option value="dracula">Dracula</option>
                     <option value="monokai">Monokai</option>
@@ -467,74 +99,61 @@
                     <option value="gruvbox">Gruvbox Dark</option>
                     <option value="solarized">Solarized Dark</option>
                     <option value="ayu">Ayu Dark</option>
-                    <option value="light">&#9728;&#65039; Light Mode</option>
+                    <option value="light">Light Mode</option>
                 </select>
             </div>
-            <a href="/logout" class="btn btn-secondary btn-sm">Keluar</a>
+            <a href="/logout" class="btn btn-secondary btn-sm">
+                <svg width="13" height="13" style="display:inline-block;vertical-align:middle;margin-right:4px;"><use href="#icon-log-out"/></svg>
+                Keluar
+            </a>
         </div>
     </header>
 
-    <!-- Body -->
     <div class="wr-body">
-
-        <!-- Left: Status + Participants -->
         <main class="wr-main">
-            <!-- Status card -->
-            <div class="wr-status-card" id="wr-status-card">
+            <div class="wr-status-card">
                 <div class="wr-pulse-ring" id="wr-pulse-ring">
-                    <span class="wr-pulse-icon">&#9200;</span>
+                    <svg width="30" height="30" style="color:var(--warning);"><use href="#icon-clock"/></svg>
                 </div>
                 <div class="wr-status-title" id="wr-status-title">Menunggu Ujian Dimulai</div>
-                <p class="wr-status-desc" id="wr-status-desc">
-                    Dosen/pengawas belum membuka lembar soal. Harap tunggu dan jangan tutup halaman ini.
-                </p>
+                <p class="wr-status-desc" id="wr-status-desc">Dosen/pengawas belum membuka lembar soal. Harap tunggu dan jangan tutup halaman ini.</p>
                 <div class="wr-dot-loader" id="wr-dot-loader">
                     <span></span><span></span><span></span>
                 </div>
             </div>
-
-            <!-- Participants -->
             <div>
                 <div class="wr-section-title">
+                    <svg width="14" height="14" style="display:inline-block;color:var(--text-muted);vertical-align:middle;"><use href="#icon-users"/></svg>
                     Peserta di Waiting Room
                     <span class="wr-count-badge" id="wr-participant-count">0</span>
                 </div>
-                <div class="wr-participants-grid" id="wr-participants-grid">
-                    <!-- Populated by JS -->
-                </div>
+                <div class="wr-participants-grid" id="wr-participants-grid"></div>
             </div>
         </main>
 
-        <!-- Right: Chat -->
         <aside class="wr-chat-panel">
             <div class="wr-chat-header">
-                <span style="font-size:1rem;">&#128172;</span>
+                <svg width="16" height="16" style="display:inline-block;color:var(--accent);vertical-align:middle;"><use href="#icon-message-square"/></svg>
                 <span class="wr-chat-header-title">Chat Waiting Room</span>
             </div>
             <div class="wr-chat-messages" id="wr-chat-messages">
                 <div class="wr-msg-system">Selamat datang! Berinteraksi dengan peserta lain di sini.</div>
             </div>
             <form class="wr-chat-input-row" id="wr-chat-form" autocomplete="off">
-                <input
-                    type="text"
-                    id="wr-chat-input"
-                    class="wr-chat-input"
-                    placeholder="Ketik pesan..."
-                    maxlength="300"
-                    autocomplete="off"
-                >
-                <button type="submit" class="wr-chat-send-btn" id="wr-chat-send" title="Kirim pesan">
-                    &#10148;
+                <input type="text" id="wr-chat-input" class="wr-chat-input" placeholder="Ketik pesan, tekan Enter..." maxlength="300" autocomplete="off">
+                <button type="submit" class="wr-chat-send-btn" id="wr-chat-send" title="Kirim pesan" aria-label="Kirim pesan">
+                    <svg width="15" height="15"><use href="#icon-send"/></svg>
                 </button>
             </form>
         </aside>
     </div>
 </div>
 
-<!-- Exam Start Banner -->
 <div class="wr-start-banner" id="wr-start-banner" role="alert" aria-live="assertive">
     <div class="wr-start-card">
-        <div class="wr-start-icon">&#128218;</div>
+        <div class="wr-start-icon-wrap">
+            <svg width="36" height="36" style="color:var(--success);"><use href="#icon-book-open"/></svg>
+        </div>
         <div class="wr-start-title">Ujian Dimulai!</div>
         <p class="wr-start-desc">Dosen telah membuka lembar soal. Bersiaplah!</p>
         <div class="wr-countdown" id="wr-countdown">3</div>
@@ -542,245 +161,141 @@
 </div>
 
 <script>
-(function () {
-    // =========================================================================
-    // Global Theme
-    // =========================================================================
-    const THEME_STORAGE_KEY = "exam_global_theme";
+(function(){
+    var THEME_KEY="exam_global_theme";
+    function applyTheme(t){document.documentElement.setAttribute("data-theme",t);var s=document.getElementById("global-theme-select");if(s)s.value=t;}
+    applyTheme(localStorage.getItem(THEME_KEY)||"dracula");
+    var sel=document.getElementById("global-theme-select");
+    if(sel)sel.addEventListener("change",function(){applyTheme(sel.value);localStorage.setItem(THEME_KEY,sel.value);});
 
-    function initGlobalTheme() {
-        const select = document.getElementById("global-theme-select");
-        const saved = localStorage.getItem(THEME_STORAGE_KEY) || "dracula";
-        applyGlobalTheme(saved);
-        if (select) {
-            select.addEventListener("change", () => {
-                applyGlobalTheme(select.value);
-                localStorage.setItem(THEME_STORAGE_KEY, select.value);
-            });
-        }
+    var MY_NIM=document.body.dataset.nim||"";
+    var lastMsgId=0;
+    var examStarted=false;
+
+    async function pollExamState(){
+        if(examStarted)return;
+        try{var r=await fetch("/api/exam/state",{credentials:"same-origin"});if(!r.ok)return;var d=await r.json();if(d.state==="active")triggerExamStart();}catch(_){}
     }
 
-    function applyGlobalTheme(theme) {
-        document.documentElement.setAttribute("data-theme", theme);
-        const s = document.getElementById("global-theme-select");
-        if (s) s.value = theme;
+    async function sendHeartbeat(){
+        if(examStarted)return;
+        try{await fetch("/api/waiting/heartbeat",{method:"POST",credentials:"same-origin"});}catch(_){}
     }
 
-    initGlobalTheme();
-
-    // =========================================================================
-    // Waiting Room State
-    // =========================================================================
-    const MY_NIM = document.body.dataset.nim || "";
-    let lastMsgId = 0;
-    let examStarted = false;
-
-    // ---- Poll exam state every 2s ----
-    async function pollExamState() {
-        if (examStarted) return;
-        try {
-            const res = await fetch("/api/exam/state", { credentials: "same-origin" });
-            if (!res.ok) return;
-            const data = await res.json();
-            if (data.state === "active") {
-                triggerExamStart();
-            }
-        } catch (_) {}
+    async function pollParticipants(){
+        try{var r=await fetch("/api/waiting/participants",{credentials:"same-origin"});if(!r.ok)return;var d=await r.json();renderParticipants(d.participants||[]);}catch(_){}
     }
 
-    // ---- Poll participants every 4s ----
-    async function pollParticipants() {
-        try {
-            const res = await fetch("/api/waiting/participants", { credentials: "same-origin" });
-            if (!res.ok) return;
-            const data = await res.json();
-            renderParticipants(data.participants || []);
-        } catch (_) {}
+    async function pollMessages(){
+        try{
+            var r=await fetch("/api/waiting/messages?since_id="+lastMsgId,{credentials:"same-origin"});
+            if(!r.ok)return;
+            var d=await r.json();
+            var msgs=d.messages||[];
+            if(msgs.length>0){msgs.forEach(appendMessage);lastMsgId=msgs[msgs.length-1].id;}
+        }catch(_){}
     }
 
-    // ---- Poll chat messages every 2s ----
-    async function pollMessages() {
-        try {
-            const res = await fetch(`/api/waiting/messages?since_id=${lastMsgId}`, { credentials: "same-origin" });
-            if (!res.ok) return;
-            const data = await res.json();
-            const msgs = data.messages || [];
-            if (msgs.length > 0) {
-                msgs.forEach(appendMessage);
-                lastMsgId = msgs[msgs.length - 1].id;
-            }
-        } catch (_) {}
-    }
-
-    // ---- Render participants ----
-    function renderParticipants(list) {
-        const grid = document.getElementById("wr-participants-grid");
-        const countEl = document.getElementById("wr-participant-count");
-        if (!grid) return;
-
-        countEl.textContent = list.length;
-
-        const prevNims = new Set([...grid.querySelectorAll(".wr-participant-card")].map(el => el.dataset.nim));
-        const newNims = new Set(list.map(p => p.nim));
-
-        // Remove cards that left
-        prevNims.forEach(nim => {
-            if (!newNims.has(nim)) {
-                const el = grid.querySelector(`[data-nim="${nim}"]`);
-                if (el) el.remove();
-            }
+    function renderParticipants(list){
+        var grid=document.getElementById("wr-participants-grid");
+        var countEl=document.getElementById("wr-participant-count");
+        if(!grid)return;
+        countEl.textContent=list.length;
+        var newNims=new Set(list.map(function(p){return p.nim;}));
+        Array.from(grid.querySelectorAll(".wr-participant-card")).forEach(function(el){
+            if(!newNims.has(el.dataset.nim))el.remove();
         });
-
-        // Add new cards
-        list.forEach(p => {
-            if (!prevNims.has(p.nim)) {
-                const card = buildParticipantCard(p);
-                grid.appendChild(card);
-            }
+        var existingNims=new Set(Array.from(grid.querySelectorAll(".wr-participant-card")).map(function(el){return el.dataset.nim;}));
+        list.forEach(function(p){
+            if(!existingNims.has(p.nim))grid.appendChild(buildCard(p));
         });
-
-        // Empty state
-        if (list.length === 0) {
-            if (!grid.querySelector(".wr-empty-state")) {
-                const empty = document.createElement("div");
-                empty.className = "wr-empty-state";
-                empty.style.cssText = "color:var(--text-subtle);font-size:0.85rem;padding:0.5rem 0;";
-                empty.textContent = "Belum ada peserta lain.";
-                grid.appendChild(empty);
-            }
-        } else {
-            const empty = grid.querySelector(".wr-empty-state");
-            if (empty) empty.remove();
-        }
+        var empty=grid.querySelector(".wr-empty-state");
+        if(list.length===0){
+            if(!empty){var el=document.createElement("div");el.className="wr-empty-state";el.textContent="Belum ada peserta lain.";grid.appendChild(el);}
+        }else{if(empty)empty.remove();}
     }
 
-    function buildParticipantCard(p) {
-        const isMe = p.nim === MY_NIM;
-        const initial = (p.name || "?").charAt(0).toUpperCase();
-        const card = document.createElement("div");
-        card.className = "wr-participant-card" + (isMe ? " is-me" : "");
-        card.dataset.nim = p.nim;
-        card.innerHTML = `
-            <div class="wr-avatar">${initial}</div>
-            <div class="wr-participant-info">
-                <div class="wr-participant-name">${escHtml(p.name)}${isMe ? ' <span style="color:var(--accent);font-size:0.65rem;">(Anda)</span>' : ""}</div>
-                <div class="wr-participant-nim">${escHtml(p.nim)}</div>
-            </div>
-        `;
+    function buildCard(p){
+        var isMe=p.nim===MY_NIM;
+        var initial=(p.name||"?").charAt(0).toUpperCase();
+        var card=document.createElement("div");
+        card.className="wr-participant-card"+(isMe?" is-me":"");
+        card.dataset.nim=p.nim;
+        card.innerHTML='<div class="wr-avatar">'+initial+'</div>'
+            +'<div class="wr-participant-info">'
+            +'<div class="wr-participant-name">'+escHtml(p.name)+(isMe?' <span style="color:var(--accent);font-size:.65rem;font-weight:700;">(Anda)</span>':'')+' </div>'
+            +'<div class="wr-participant-nim">'+escHtml(p.nim)+'</div>'
+            +'</div>';
         return card;
     }
 
-    // ---- Render chat message ----
-    function appendMessage(msg) {
-        const box = document.getElementById("wr-chat-messages");
-        if (!box) return;
-        const isMe = msg.nim === MY_NIM;
-        const time = formatTime(msg.sent_at);
-
-        const el = document.createElement("div");
-        el.className = "wr-msg" + (isMe ? " is-mine" : "");
-        el.innerHTML = `
-            <div class="wr-msg-meta">
-                ${!isMe ? `<strong>${escHtml(msg.name)}</strong>` : ""}
-                <span>${time}</span>
-            </div>
-            <div class="wr-msg-bubble">${escHtml(msg.message)}</div>
-        `;
+    function appendMessage(msg){
+        var box=document.getElementById("wr-chat-messages");
+        if(!box)return;
+        var isMe=msg.nim===MY_NIM;
+        var time=formatTime(msg.sent_at);
+        var el=document.createElement("div");
+        el.className="wr-msg"+(isMe?" is-mine":"");
+        el.innerHTML='<div class="wr-msg-meta">'+(!isMe?'<strong>'+escHtml(msg.name)+'</strong>':'')+' <span>'+time+'</span></div>'
+            +'<div class="wr-msg-bubble">'+escHtml(msg.message)+'</div>';
         box.appendChild(el);
-        box.scrollTop = box.scrollHeight;
+        box.scrollTop=box.scrollHeight;
     }
 
-    // ---- Send chat message ----
-    const chatForm = document.getElementById("wr-chat-form");
-    const chatInput = document.getElementById("wr-chat-input");
+    var chatForm=document.getElementById("wr-chat-form");
+    var chatInput=document.getElementById("wr-chat-input");
 
-    chatForm?.addEventListener("submit", async (e) => {
+    if(chatForm)chatForm.addEventListener("submit",async function(e){
         e.preventDefault();
-        const text = chatInput.value.trim();
-        if (!text) return;
-
-        chatInput.value = "";
-        chatInput.disabled = true;
-
-        try {
-            await fetch("/api/waiting/messages", {
-                method: "POST",
-                credentials: "same-origin",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: text })
-            });
-            // Message will appear via the next poll cycle
-        } catch (_) {}
-
-        chatInput.disabled = false;
-        chatInput.focus();
+        var text=chatInput.value.trim();
+        if(!text||chatInput.disabled)return;
+        chatInput.value="";chatInput.disabled=true;
+        try{await fetch("/api/waiting/messages",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:text})});}catch(_){}
+        chatInput.disabled=false;chatInput.focus();
     });
 
-    // Ctrl+Enter or Enter sends
-    chatInput?.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            chatForm.dispatchEvent(new Event("submit"));
-        }
+    if(chatInput)chatInput.addEventListener("keydown",function(e){
+        if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(chatForm)chatForm.dispatchEvent(new Event("submit"));}
     });
 
-    // ---- Exam start trigger ----
-    function triggerExamStart() {
-        if (examStarted) return;
-        examStarted = true;
-
-        // Update status card UI
-        const ring = document.getElementById("wr-pulse-ring");
-        const title = document.getElementById("wr-status-title");
-        const desc = document.getElementById("wr-status-desc");
-        const loader = document.getElementById("wr-dot-loader");
-
-        if (ring) { ring.classList.add("active"); ring.innerHTML = "&#9989;"; }
-        if (title) title.textContent = "Ujian Dimulai!";
-        if (desc) desc.textContent = "Lembar soal sedang dibuka...";
-        if (loader) loader.remove();
-
-        // Show countdown banner
-        const banner = document.getElementById("wr-start-banner");
-        const countdown = document.getElementById("wr-countdown");
-        if (banner) banner.classList.add("visible");
-
-        let n = 3;
-        const tick = setInterval(() => {
-            n--;
-            if (countdown) countdown.textContent = n;
-            if (n <= 0) {
-                clearInterval(tick);
-                window.location.href = "/exam";
-            }
-        }, 1000);
+    function triggerExamStart(){
+        if(examStarted)return;
+        examStarted=true;
+        var ring=document.getElementById("wr-pulse-ring");
+        var title=document.getElementById("wr-status-title");
+        var desc=document.getElementById("wr-status-desc");
+        var loader=document.getElementById("wr-dot-loader");
+        if(ring){ring.classList.add("active");ring.innerHTML='<svg width="30" height="30" style="color:var(--success);"><use href="#icon-check-circle"/></svg>';}
+        if(title)title.textContent="Ujian Dimulai!";
+        if(desc)desc.textContent="Lembar soal sedang dibuka...";
+        if(loader)loader.remove();
+        var banner=document.getElementById("wr-start-banner");
+        var countdown=document.getElementById("wr-countdown");
+        if(banner)banner.classList.add("visible");
+        var n=3;
+        var tick=setInterval(function(){
+            n--;if(countdown)countdown.textContent=n;
+            if(n<=0){clearInterval(tick);window.location.href="/exam";}
+        },1000);
     }
 
-    // ---- Helpers ----
-    function escHtml(str) {
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
+    function escHtml(str){
+        return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     }
 
-    function formatTime(iso) {
-        if (!iso) return "";
-        try {
-            const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
-            return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-        } catch (_) { return ""; }
+    function formatTime(iso){
+        if(!iso)return"";
+        try{var d=new Date(iso.endsWith("Z")?iso:iso+"Z");return d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});}catch(_){return"";}
     }
 
-    // ---- Kick off polling ----
+    sendHeartbeat();
     pollParticipants();
     pollMessages();
     pollExamState();
-
-    setInterval(pollExamState, 2000);
-    setInterval(pollParticipants, 4000);
-    setInterval(pollMessages, 2000);
+    setInterval(sendHeartbeat,10000);
+    setInterval(pollExamState,2000);
+    setInterval(pollParticipants,5000);
+    setInterval(pollMessages,2000);
 })();
 </script>
 </body>
