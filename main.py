@@ -322,6 +322,20 @@ async def api_student_schema():
     schema = database.get_classicmodels_schema()
     return {"schema": schema}
 
+@app.get("/api/student/schema-full")
+async def api_student_schema_full(request: Request):
+    token = request.cookies.get("student_token")
+    nim = request.cookies.get("student_nim")
+    client_ip = get_client_ip(request)
+    if not token or not nim:
+        raise HTTPException(status_code=401, detail="Tidak terautentikasi.")
+    is_valid, _, _ = database.validate_student_session(nim, token, client_ip)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Sesi tidak valid.")
+    schema = database.get_classicmodels_schema()
+    relations = database.get_classicmodels_fk_relations()
+    return {"schema": schema, "relations": relations}
+
 # ==============================================================================
 # Admin & Lecturer Portal Routes
 # ==============================================================================

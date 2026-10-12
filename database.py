@@ -1287,6 +1287,48 @@ def get_classicmodels_schema() -> Dict[str, List[Dict[str, Any]]]:
         print(f"Error inspecting schema: {e}")
     return schema_info
 
+def get_classicmodels_fk_relations() -> list:
+    """
+    Returns all foreign key relationships in classicmodels.
+    Each item: { from_table, from_col, to_table, to_col, constraint_name }
+    """
+    relations = []
+    try:
+        conn = get_pg_admin_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                kcu.table_name        AS from_table,
+                kcu.column_name       AS from_col,
+                ccu.table_name        AS to_table,
+                ccu.column_name       AS to_col,
+                tc.constraint_name
+            FROM information_schema.table_constraints AS tc
+            JOIN information_schema.key_column_usage AS kcu
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema   = kcu.table_schema
+            JOIN information_schema.constraint_column_usage AS ccu
+                ON ccu.constraint_name = tc.constraint_name
+                AND ccu.table_schema   = tc.table_schema
+            WHERE tc.constraint_type = 'FOREIGN KEY'
+              AND tc.table_schema NOT IN ('information_schema', 'pg_catalog')
+              AND tc.table_schema NOT LIKE 'pg_%%'
+            ORDER BY from_table, from_col;
+        """)
+        for row in cur.fetchall():
+            relations.append({
+                "from_table": row[0],
+                "from_col":   row[1],
+                "to_table":   row[2],
+                "to_col":     row[3],
+                "constraint":  row[4],
+            })
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error fetching FK relations: {e}")
+    return relations
+
 def reset_classicmodels_database(custom_sql_text: Optional[str] = None) -> Tuple[bool, str]:
     """
     Restores the classicmodels database to the initial clean state.

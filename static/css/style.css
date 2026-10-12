@@ -676,6 +676,7 @@ code, pre {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .question-nav-grid {
@@ -684,6 +685,7 @@ code, pre {
   gap: 0.4rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .q-btn {
@@ -725,6 +727,7 @@ code, pre {
   padding: 1rem;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .question-title-card {

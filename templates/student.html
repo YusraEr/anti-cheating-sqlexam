@@ -26,7 +26,218 @@
     <link rel="stylesheet" href="/static/vendor/codemirror/theme/twilight.css">
     <link rel="stylesheet" href="/static/vendor/codemirror/addon/hint/show-hint.css">
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* ---- Sidebar Tab System ---- */
+        .sidebar-panel { display: flex; flex-direction: column; overflow: hidden; }
+        .sidebar-tab-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            background-color: var(--bg-surface);
+            flex-shrink: 0;
+        }
+        .sidebar-tab-btn {
+            flex: 1;
+            padding: .55rem .5rem;
+            font-size: .78rem;
+            font-weight: 600;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color .15s ease, border-color .15s ease;
+            font-family: var(--font-sans);
+            white-space: nowrap;
+        }
+        .sidebar-tab-btn:hover { color: var(--text-main); }
+        .sidebar-tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .sidebar-tab-pane { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+        .sidebar-tab-pane.active { display: flex; }
+
+        /* ---- ERD Panel ---- */
+        .erd-pane { background-color: var(--bg-app); }
+        .erd-toolbar {
+            display: flex;
+            gap: .4rem;
+            align-items: center;
+            padding: .6rem .65rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background-color: var(--bg-surface);
+            flex-shrink: 0;
+        }
+        .erd-search-input {
+            flex: 1;
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: .3rem .6rem;
+            font-size: .78rem;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            outline: none;
+            transition: border-color .15s ease;
+        }
+        .erd-search-input:focus { border-color: var(--accent); }
+        .erd-search-input::placeholder { color: var(--text-subtle); }
+        .erd-rel-legend {
+            display: flex;
+            gap: .75rem;
+            padding: .35rem .65rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background-color: var(--bg-surface);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .erd-legend-row { display: flex; align-items: center; gap: .35rem; font-size: .68rem; color: var(--text-muted); }
+        .erd-leg-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .erd-cards-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: .65rem;
+            display: block;          /* block, not flex — prevents cards from being flex-shrunk */
+            min-height: 0;
+            position: relative;
+        }
+        .erd-cards-container::-webkit-scrollbar { width: 4px; }
+        .erd-cards-container::-webkit-scrollbar-thumb { background-color: var(--border-subtle); border-radius: 4px; }
+
+        /* ERD Table Card */
+        .erd-table-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            transition: border-color .15s ease;
+            flex-shrink: 0;          /* never shrink if somehow in a flex context */
+            margin-bottom: .55rem;   /* gap between cards (replaces flex gap) */
+        }
+        .erd-table-card:last-child { margin-bottom: 0; }
+        .erd-table-card.has-rel { border-color: var(--primary); }
+        .erd-table-card.erd-hidden { display: none; }
+        .erd-table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .45rem .65rem;
+            background-color: var(--bg-surface-elevated);
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid var(--border-subtle);
+            gap: .5rem;
+        }
+        .erd-table-name {
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .erd-table-count {
+            font-size: .65rem;
+            color: var(--text-subtle);
+            flex-shrink: 0;
+        }
+        .erd-table-toggle {
+            font-size: .7rem;
+            color: var(--text-subtle);
+            flex-shrink: 0;
+            transition: transform .15s ease;
+        }
+        .erd-table-card.open .erd-table-toggle { transform: rotate(180deg); }
+        .erd-col-list {
+            display: none;
+        }
+        .erd-table-card.open .erd-col-list { display: block; }
+        .erd-col-row {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .28rem .65rem;
+            border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 50%, transparent);
+            cursor: pointer;
+            transition: background-color .12s ease;
+            font-size: .76rem;
+        }
+        .erd-col-row:last-child { border-bottom: none; }
+        .erd-col-row:hover { background-color: var(--bg-surface-elevated); }
+        .erd-col-row.erd-highlight { background-color: color-mix(in srgb, var(--accent) 12%, transparent); }
+        .erd-col-name {
+            font-family: var(--font-mono);
+            color: var(--text-main);
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .erd-col-type {
+            font-size: .67rem;
+            color: var(--text-subtle);
+            flex-shrink: 0;
+        }
+        .erd-badge {
+            font-size: .6rem;
+            font-weight: 700;
+            padding: .1rem .3rem;
+            border-radius: 3px;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        .erd-badge-pk { background-color: color-mix(in srgb, var(--warning) 20%, transparent); color: var(--warning); }
+        .erd-badge-fk { background-color: color-mix(in srgb, var(--primary) 20%, transparent); color: var(--primary); }
+        .erd-badge-nn { background-color: color-mix(in srgb, var(--text-subtle) 15%, transparent); color: var(--text-subtle); }
+
+        /* ERD Relation Badges under table header */
+        .erd-rel-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+            padding: .3rem .65rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background-color: color-mix(in srgb, var(--primary) 5%, transparent);
+        }
+        .erd-rel-tag {
+            font-size: .67rem;
+            color: var(--primary);
+            background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+            border-radius: 3px;
+            padding: .1rem .35rem;
+            font-family: var(--font-mono);
+        }
+        .erd-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
 </head>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+    <symbol id="si-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+        <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+    </symbol>
+    <symbol id="si-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+    </symbol>
+    <symbol id="si-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </symbol>
+    <symbol id="si-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+    </symbol>
+</svg>
 
 <body data-nim="{{ user.nim }}" data-token="{{ user.session_token }}">
 
@@ -58,7 +269,7 @@
                     <option value="gruvbox">Gruvbox Dark</option>
                     <option value="solarized">Solarized Dark</option>
                     <option value="ayu">Ayu Dark</option>
-                    <option value="light">☀️ Light Mode</option>
+                    <option value="light">Light Mode</option>
                 </select>
             </div>
             <button type="button" class="btn btn-secondary btn-sm" id="btn-logout-trigger" onclick="openExitModal()">
@@ -70,51 +281,61 @@
     <!-- IDE Container -->
     <main class="ide-container">
 
-        <!-- Left Panel: Questions & Schema -->
-        <aside class="sidebar-panel">
-            <div class="sidebar-header">
-                <span
-                    style="font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
-                    Daftar Soal
-                </span>
-                <span id="submission-status-tag" class="status-badge badge-warning">
-                    Belum Disubmit
-                </span>
+        <!-- Left Panel: Tabs (Soal | ERD Schema) -->
+        <aside class="sidebar-panel" id="sidebar-panel">
+
+            <!-- Tab Nav -->
+            <div class="sidebar-tab-nav" id="sidebar-tab-nav" role="tablist">
+                <button type="button" class="sidebar-tab-btn active" data-tab="soal" role="tab" id="tab-btn-soal" aria-selected="true" aria-controls="tab-pane-soal">
+                    <svg width="13" height="13" style="display:inline-block;vertical-align:middle;margin-right:4px;"><use href="#si-list"/></svg>
+                    Soal
+                </button>
+                <button type="button" class="sidebar-tab-btn" data-tab="erd" role="tab" id="tab-btn-erd" aria-selected="false" aria-controls="tab-pane-erd">
+                    <svg width="13" height="13" style="display:inline-block;vertical-align:middle;margin-right:4px;"><use href="#si-db"/></svg>
+                    ERD Schema
+                </button>
             </div>
 
-            <!-- Numbers Grid -->
-            <div class="question-nav-grid" id="question-nav">
-                <!-- Populated dynamically by student.js -->
-            </div>
-
-            <!-- Active Question Description -->
-            <div class="question-content-pane">
-                <div class="question-title-card">
-                    <span id="q-number"
-                        style="font-size: 0.8rem; font-weight: 600; color: var(--accent); text-transform: uppercase;">
-                        Soal No. 1
-                    </span>
-                    <h3 id="q-title">Memuat Soal...</h3>
-                    <span class="weight-pill" id="q-weight">Bobot: - Poin</span>
+            <!-- Tab 1: Soal -->
+            <div id="tab-pane-soal" role="tabpanel" aria-labelledby="tab-btn-soal" class="sidebar-tab-pane active">
+                <div class="sidebar-header">
+                    <span style="font-weight:600;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);">Daftar Soal</span>
+                    <span id="submission-status-tag" class="status-badge badge-warning">Belum Disubmit</span>
                 </div>
-
-                <div class="question-description-body" id="q-description">
-                    <p>Silakan pilih nomor soal di atas untuk membaca instruksi query.</p>
-                </div>
-            </div>
-
-            <!-- Database Schema Browser Drawer -->
-            <div class="schema-browser-wrapper">
-                <div class="schema-header">
-                    <span>Skema Database (classicmodels)</span>
-                    <span style="font-size: 0.7rem; color: #60a5fa;">Klik kolom untuk menyalin</span>
-                </div>
-                <div id="schema-tree-container">
-                    <div style="padding: 1rem; color: var(--text-muted); font-size: 0.8rem; text-align: center;">
-                        Memuat skema tabel...
+                <div class="question-nav-grid" id="question-nav"></div>
+                <div class="question-content-pane">
+                    <div class="question-title-card">
+                        <span id="q-number" style="font-size:.8rem;font-weight:600;color:var(--accent);text-transform:uppercase;">Soal No. 1</span>
+                        <h3 id="q-title">Memuat Soal...</h3>
+                        <span class="weight-pill" id="q-weight">Bobot: - Poin</span>
+                    </div>
+                    <div class="question-description-body" id="q-description">
+                        <p>Silakan pilih nomor soal di atas untuk membaca instruksi query.</p>
                     </div>
                 </div>
             </div>
+
+            <!-- Tab 2: ERD Schema -->
+            <div id="tab-pane-erd" role="tabpanel" aria-labelledby="tab-btn-erd" class="sidebar-tab-pane erd-pane" style="display:none;">
+                <div class="erd-toolbar">
+                    <input type="search" id="erd-search" class="erd-search-input" placeholder="Cari tabel atau kolom..." autocomplete="off">
+                    <button type="button" class="btn btn-secondary btn-sm" id="erd-toggle-rel" title="Tampilkan/sembunyikan tag relasi" style="padding:.3rem .55rem;">
+                        <svg width="14" height="14"><use href="#si-link"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btn-open-erd-diagram" title="Buka diagram ERD visual" style="padding:.3rem .65rem;display:flex;align-items:center;gap:.35rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="4" height="4" rx="1"/><rect x="10" y="3" width="4" height="4" rx="1"/><rect x="18" y="3" width="4" height="4" rx="1"/><rect x="6" y="17" width="4" height="4" rx="1"/><rect x="14" y="17" width="4" height="4" rx="1"/><line x1="4" y1="7" x2="4" y2="14"/><line x1="12" y1="7" x2="12" y2="14"/><line x1="20" y1="7" x2="20" y2="14"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="8" y1="17" x2="8" y2="14"/><line x1="16" y1="17" x2="16" y2="14"/></svg>
+                        Diagram
+                    </button>
+                </div>
+                <div class="erd-rel-legend" id="erd-rel-legend" style="display:none;">
+                    <div class="erd-legend-row"><span class="erd-leg-dot" style="background:var(--primary);"></span>FK → PK (Many-to-One)</div>
+                </div>
+                <div class="erd-cards-container" id="erd-cards-container">
+                    <div style="padding:1.5rem;text-align:center;color:var(--text-muted);font-size:.85rem;">Memuat schema ERD...</div>
+                </div>
+                <canvas id="erd-canvas" class="erd-canvas" style="display:none;"></canvas>
+            </div>
+
         </aside>
 
         <!-- Right Panel: SQL Editor & Output Table -->
@@ -205,6 +426,32 @@
         </div>
     </div>
 
+    <!-- ERD Diagram Modal -->
+    <div id="erd-diagram-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.82);flex-direction:column;" role="dialog" aria-modal="true" aria-label="Diagram ERD Database">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;background:var(--bg-surface);border-bottom:1px solid var(--border-subtle);flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:.75rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="4" height="4" rx="1"/><rect x="10" y="3" width="4" height="4" rx="1"/><rect x="18" y="3" width="4" height="4" rx="1"/><rect x="6" y="17" width="4" height="4" rx="1"/><rect x="14" y="17" width="4" height="4" rx="1"/><line x1="4" y1="7" x2="4" y2="14"/><line x1="12" y1="7" x2="12" y2="14"/><line x1="20" y1="7" x2="20" y2="14"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="8" y1="17" x2="8" y2="14"/><line x1="16" y1="17" x2="16" y2="14"/></svg>
+                <span style="font-weight:700;font-size:.9rem;color:var(--text-main);">Diagram ERD — classicmodels</span>
+                <span style="font-size:.72rem;color:var(--text-subtle);">Scroll = zoom &nbsp;|&nbsp; Drag = pan &nbsp;|&nbsp; Klik tabel = sorot relasi</span>
+            </div>
+            <div style="display:flex;gap:.4rem;align-items:center;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="erdZoomOut()" title="Zoom out" style="padding:.25rem .55rem;font-size:1rem;line-height:1;">&#8722;</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="erdZoomIn()" title="Zoom in" style="padding:.25rem .55rem;font-size:1rem;line-height:1;">&#43;</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="erdResetView()" style="padding:.25rem .55rem;font-size:.78rem;">Reset</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeErdDiagram()" aria-label="Tutup" style="padding:.25rem .55rem;font-size:1.1rem;line-height:1;">&times;</button>
+            </div>
+        </div>
+        <!-- Legend -->
+        <div style="display:flex;gap:1.25rem;align-items:center;padding:.35rem 1rem;background:var(--bg-surface);border-bottom:1px solid var(--border-subtle);flex-shrink:0;font-size:.72rem;color:var(--text-muted);flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:.3rem;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f59e0b;"></span>PK — Primary Key</span>
+            <span style="display:flex;align-items:center;gap:.3rem;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#6366f1;"></span>FK — Foreign Key</span>
+            <span style="display:flex;align-items:center;gap:.3rem;"><span style="display:inline-block;width:32px;height:2px;background:rgba(99,102,241,.7);position:relative;"></span>Relasi FK → PK</span>
+        </div>
+        <div style="flex:1;overflow:hidden;position:relative;" id="erd-canvas-wrapper">
+            <canvas id="erd-diagram-canvas" style="display:block;width:100%;height:100%;"></canvas>
+        </div>
+    </div>
+
     <!-- Script Inline Controller Modal (Menjamin Berfungsi di Safari Tanpa Terkendala Cache) -->
     <script>
         function openExitModal() {
@@ -226,6 +473,7 @@
         document.addEventListener("keydown", function (e) {
             if (e.key === "Escape") {
                 closeExitModal();
+                if (typeof closeErdDiagram === "function") closeErdDiagram();
             }
         });
     </script>
@@ -235,7 +483,7 @@
     <script src="/static/vendor/codemirror/mode/sql/sql.js"></script>
     <script src="/static/vendor/codemirror/addon/hint/show-hint.js"></script>
     <script src="/static/vendor/codemirror/addon/hint/sql-hint.js"></script>
-    <script src="/static/js/student.js?v=2"></script>
+    <script src="/static/js/student.js?v=3"></script>
 
 </body>
 
