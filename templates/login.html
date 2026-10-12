@@ -1,10 +1,17 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dracula">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Ujian Praktikum Basis Data - Offline Exam</title>
+    <!-- Apply saved theme before CSS renders to prevent flash -->
+    <script>
+        (function(){
+            var t = localStorage.getItem("exam_global_theme") || "dracula";
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
@@ -43,8 +50,8 @@
             </div>
 
             <div
-                style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: #94a3b8;">
-                <strong style="color: #f59e0b;">Perhatian & Ketentuan Ujian:</strong>
+                style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--text-muted);">
+                <strong style="color: var(--warning);">Perhatian & Ketentuan Ujian:</strong>
                 <ul style="padding-left: 1.2rem; margin-top: 0.35rem; line-height: 1.5;">
                     <li>Setiap NIM terikat pada 1 perangkat (IP Binding). Login dari laptop lain akan otomatis
                         membatalkan sesi ini.</li>
@@ -60,7 +67,7 @@
 
         <div
             style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
-            <a href="/admin/login" style="color: #60a5fa; text-decoration: none; font-size: 0.85rem;">
+            <a href="/admin/login" style="color: var(--accent); text-decoration: none; font-size: 0.85rem;">
                 Akses Dosen / Pengawas Ujian &rarr;
             </a>
         </div>

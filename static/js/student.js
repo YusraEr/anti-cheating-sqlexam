@@ -47,7 +47,7 @@ function initCodeMirror() {
 
     editor = CodeMirror.fromTextArea(textarea, {
         mode: "text/x-pgsql",
-        theme: "dracula",
+        theme: THEME_CM_MAP[localStorage.getItem(THEME_STORAGE_KEY) || "dracula"] || "dracula",
         lineNumbers: true,
         indentWithTabs: false,
         smartIndent: true,
@@ -80,50 +80,50 @@ function initCodeMirror() {
 }
 
 // ==============================================================================
-// 1b. Theme Selector
+// 1b. Global Theme System
 // ==============================================================================
-const THEME_STORAGE_KEY = "exam_ide_theme";
+const THEME_STORAGE_KEY = "exam_global_theme";
 
-const POPULAR_THEMES = [
-    { value: "dracula",               label: "Dracula" },
-    { value: "monokai",               label: "Monokai" },
-    { value: "nord",                  label: "Nord" },
-    { value: "material-darker",       label: "Material Darker" },
-    { value: "darcula",               label: "Darcula (JetBrains)" },
-    { value: "gruvbox-dark",          label: "Gruvbox Dark" },
-    { value: "solarized dark",        label: "Solarized Dark" },
-    { value: "tomorrow-night-bright", label: "Tomorrow Night" },
-    { value: "ayu-dark",              label: "Ayu Dark" },
-    { value: "cobalt",                label: "Cobalt" },
-    { value: "oceanic-next",          label: "Oceanic Next" },
-    { value: "panda-syntax",          label: "Panda Syntax" },
-    { value: "night",                 label: "Night" },
-    { value: "twilight",              label: "Twilight" },
-];
+// Maps website theme key -> CodeMirror theme name
+const THEME_CM_MAP = {
+    "dracula":    "dracula",
+    "monokai":    "monokai",
+    "nord":       "nord",
+    "material":   "material-darker",
+    "gruvbox":    "gruvbox-dark",
+    "solarized":  "solarized dark",
+    "ayu":        "ayu-dark",
+    "light":      "default",        // CodeMirror's built-in light theme
+};
 
 function initThemeSelector() {
-    const select = document.getElementById("theme-selector");
+    const select = document.getElementById("global-theme-select");
     if (!select) return;
 
-    // Restore saved theme or fall back to dracula
     const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "dracula";
-    applyTheme(savedTheme);
-    select.value = savedTheme;
+    applyGlobalTheme(savedTheme);
 
     select.addEventListener("change", () => {
-        applyTheme(select.value);
+        applyGlobalTheme(select.value);
         localStorage.setItem(THEME_STORAGE_KEY, select.value);
     });
 }
 
-function applyTheme(theme) {
-    if (!editor) return;
-    editor.setOption("theme", theme);
+function applyGlobalTheme(theme) {
+    // Apply CSS variable theme to entire page
+    document.documentElement.setAttribute("data-theme", theme);
 
-    // Reflect the active theme name in the selector label attribute for CSS hooks
-    const select = document.getElementById("theme-selector");
+    // Sync the dropdown
+    const select = document.getElementById("global-theme-select");
     if (select) select.value = theme;
+
+    // Sync CodeMirror editor theme
+    if (editor) {
+        const cmTheme = THEME_CM_MAP[theme] || "dracula";
+        editor.setOption("theme", cmTheme);
+    }
 }
+
 
 // ==============================================================================
 // 2. Anti-Cheating & Security Controls

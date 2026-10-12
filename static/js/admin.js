@@ -12,7 +12,33 @@ let activeTab = "monitoring";
 let questionsList = [];
 let monitorInterval = null;
 
+// ==============================================================================
+// Global Theme System
+// ==============================================================================
+const THEME_STORAGE_KEY = "exam_global_theme";
+
+function initGlobalTheme() {
+    const select = document.getElementById("global-theme-select");
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "dracula";
+    applyGlobalTheme(savedTheme);
+
+    if (select) {
+        select.addEventListener("change", () => {
+            applyGlobalTheme(select.value);
+            localStorage.setItem(THEME_STORAGE_KEY, select.value);
+        });
+    }
+}
+
+function applyGlobalTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const select = document.getElementById("global-theme-select");
+    if (select) select.value = theme;
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
+    initGlobalTheme();
     initAdminTabs();
     loadDashboardData();
     loadQuestionsData();

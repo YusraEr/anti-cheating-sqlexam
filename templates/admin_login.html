@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dracula">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Dosen / Pengawas - Offline SQL Exam</title>
+    <!-- Apply saved theme before CSS renders to prevent flash -->
+    <script>
+        (function(){
+            var t = localStorage.getItem("exam_global_theme") || "dracula";
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="login-page-wrapper">
@@ -41,7 +48,7 @@
         </form>
 
         <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
-            <a href="/login" style="color: #60a5fa; text-decoration: none; font-size: 0.85rem;">
+            <a href="/login" style="color: var(--accent); text-decoration: none; font-size: 0.85rem;">
                 &larr; Kembali ke Login Mahasiswa
             </a>
         </div>

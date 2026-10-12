@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dracula">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lembar Ujian Praktikum Basis Data</title>
+    <!-- Apply saved theme before CSS renders -->
+    <script>(function () { var t = localStorage.getItem("exam_global_theme") || "dracula"; document.documentElement.setAttribute("data-theme", t); })();</script>
     <!-- 100% Offline Assets: Self-Hosted CodeMirror & Styles -->
     <link rel="stylesheet" href="/static/vendor/codemirror/lib/codemirror.css">
     <!-- Theme stylesheets (popular IDE themes) -->
@@ -24,6 +27,7 @@
     <link rel="stylesheet" href="/static/vendor/codemirror/addon/hint/show-hint.css">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
+
 <body data-nim="{{ user.nim }}" data-token="{{ user.session_token }}">
 
     <!-- Header Navigation -->
@@ -43,6 +47,20 @@
             <div class="user-tag" title="Alamat IP Perangkat Anda">
                 <code>{{ user.ip_address }}</code>
             </div>
+            <!-- Global Theme Switcher -->
+            <div class="global-theme-switcher" title="Ganti tema tampilan">
+                <span class="global-theme-icon">Theme</span>
+                <select id="global-theme-select" class="global-theme-select" aria-label="Pilih Tema">
+                    <option value="dracula">Dracula</option>
+                    <option value="monokai">Monokai</option>
+                    <option value="nord">Nord</option>
+                    <option value="material">Material Darker</option>
+                    <option value="gruvbox">Gruvbox Dark</option>
+                    <option value="solarized">Solarized Dark</option>
+                    <option value="ayu">Ayu Dark</option>
+                    <option value="light">☀️ Light Mode</option>
+                </select>
+            </div>
             <button type="button" class="btn btn-secondary btn-sm" id="btn-logout-trigger" onclick="openExitModal()">
                 Keluar
             </button>
@@ -51,11 +69,12 @@
 
     <!-- IDE Container -->
     <main class="ide-container">
-        
+
         <!-- Left Panel: Questions & Schema -->
         <aside class="sidebar-panel">
             <div class="sidebar-header">
-                <span style="font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+                <span
+                    style="font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
                     Daftar Soal
                 </span>
                 <span id="submission-status-tag" class="status-badge badge-warning">
@@ -71,7 +90,8 @@
             <!-- Active Question Description -->
             <div class="question-content-pane">
                 <div class="question-title-card">
-                    <span id="q-number" style="font-size: 0.8rem; font-weight: 600; color: #60a5fa; text-transform: uppercase;">
+                    <span id="q-number"
+                        style="font-size: 0.8rem; font-weight: 600; color: var(--accent); text-transform: uppercase;">
                         Soal No. 1
                     </span>
                     <h3 id="q-title">Memuat Soal...</h3>
@@ -99,7 +119,7 @@
 
         <!-- Right Panel: SQL Editor & Output Table -->
         <section class="work-area">
-            
+
             <!-- Editor Actions Toolbar -->
             <div class="editor-toolbar">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -111,33 +131,16 @@
                     </span>
                 </div>
                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                    <!-- Theme Selector -->
-                    <div class="theme-selector-wrapper" title="Ganti tema editor">
-                        <span class="theme-icon">🎨</span>
-                        <select id="theme-selector" class="theme-select" aria-label="Pilih Tema Editor">
-                            <option value="dracula">Dracula</option>
-                            <option value="monokai">Monokai</option>
-                            <option value="nord">Nord</option>
-                            <option value="material-darker">Material Darker</option>
-                            <option value="darcula">Darcula (JetBrains)</option>
-                            <option value="gruvbox-dark">Gruvbox Dark</option>
-                            <option value="solarized dark">Solarized Dark</option>
-                            <option value="tomorrow-night-bright">Tomorrow Night</option>
-                            <option value="ayu-dark">Ayu Dark</option>
-                            <option value="cobalt">Cobalt</option>
-                            <option value="oceanic-next">Oceanic Next</option>
-                            <option value="panda-syntax">Panda Syntax</option>
-                            <option value="night">Night</option>
-                            <option value="twilight">Twilight</option>
-                        </select>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btn-format-sql" title="Rapikan kata kunci query">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-format-sql"
+                        title="Rapikan kata kunci query">
                         Format SQL
                     </button>
-                    <button type="button" class="btn btn-primary" id="btn-run-query" title="Jalankan query untuk melihat output (Ctrl+Enter)">
+                    <button type="button" class="btn btn-primary" id="btn-run-query"
+                        title="Jalankan query untuk melihat output (Ctrl+Enter)">
                         Run Query
                     </button>
-                    <button type="button" class="btn btn-success" id="btn-submit-answer" title="Simpan query ini sebagai jawaban resmi">
+                    <button type="button" class="btn btn-success" id="btn-submit-answer"
+                        title="Simpan query ini sebagai jawaban resmi">
                         Submit Answer
                     </button>
                 </div>
@@ -161,7 +164,8 @@
             <!-- Output Table / State Box -->
             <div class="output-pane" id="output-content">
                 <div class="state-box state-box-empty">
-                    <p>Klik tombol <strong>Run Query</strong> atau tekan <code>Ctrl + Enter</code> untuk melihat hasil eksekusi SQL.</p>
+                    <p>Klik tombol <strong>Run Query</strong> atau tekan <code>Ctrl + Enter</code> untuk melihat hasil
+                        eksekusi SQL.</p>
                 </div>
             </div>
 
@@ -170,25 +174,33 @@
     </main>
 
     <!-- Modal Internal: Konfirmasi Keluar Ujian -->
-    <div class="modal-backdrop" id="exit-confirm-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="exit-modal-title" onclick="if(event.target===this)closeExitModal();">
+    <div class="modal-backdrop" id="exit-confirm-modal" style="display: none;" role="dialog" aria-modal="true"
+        aria-labelledby="exit-modal-title" onclick="if(event.target===this)closeExitModal();">
         <div class="modal-dialog" style="max-width: 440px;" onclick="event.stopPropagation();">
             <div class="modal-header">
-                <h3 id="exit-modal-title" style="font-size: 1.05rem; color: var(--text-main); margin: 0;">Konfirmasi Keluar Ujian</h3>
-                <button type="button" class="btn btn-secondary btn-sm" id="btn-exit-cancel-x" onclick="closeExitModal()" aria-label="Tutup" style="padding: 0.2rem 0.5rem; font-size: 1.1rem; line-height: 1;">&times;</button>
+                <h3 id="exit-modal-title" style="font-size: 1.05rem; color: var(--text-main); margin: 0;">Konfirmasi
+                    Keluar Ujian</h3>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-exit-cancel-x" onclick="closeExitModal()"
+                    aria-label="Tutup"
+                    style="padding: 0.2rem 0.5rem; font-size: 1.1rem; line-height: 1;">&times;</button>
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 0.75rem; color: var(--text-main); font-size: 0.95rem;">
                     Apakah Anda yakin ingin keluar dari sesi ujian praktikum?
                 </p>
-                <div style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; padding: 0.75rem; border-radius: var(--radius-sm);">
+                <div
+                    style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; padding: 0.75rem; border-radius: var(--radius-sm);">
                     <p style="font-size: 0.85rem; color: #fca5a5; margin: 0;">
-                        Pastikan seluruh jawaban telah Anda simpan dengan menekan <strong>Submit Answer</strong> sebelum keluar. Sesi ujian Anda pada perangkat ini akan diakhiri.
+                        Pastikan seluruh jawaban telah Anda simpan dengan menekan <strong>Submit Answer</strong> sebelum
+                        keluar. Sesi ujian Anda pada perangkat ini akan diakhiri.
                     </p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="btn-exit-cancel" onclick="closeExitModal()">Batal</button>
-                <button type="button" class="btn btn-danger" id="btn-exit-proceed" onclick="confirmExitExam()">Ya, Keluar</button>
+                <button type="button" class="btn btn-secondary" id="btn-exit-cancel"
+                    onclick="closeExitModal()">Batal</button>
+                <button type="button" class="btn btn-danger" id="btn-exit-proceed" onclick="confirmExitExam()">Ya,
+                    Keluar</button>
             </div>
         </div>
     </div>
@@ -211,7 +223,7 @@
             window.isLoggingOut = true;
             window.location.href = "/logout";
         }
-        document.addEventListener("keydown", function(e) {
+        document.addEventListener("keydown", function (e) {
             if (e.key === "Escape") {
                 closeExitModal();
             }
@@ -226,4 +238,5 @@
     <script src="/static/js/student.js?v=2"></script>
 
 </body>
+
 </html>
