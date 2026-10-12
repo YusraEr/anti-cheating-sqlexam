@@ -3,56 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Dosen / Pengawas - Offline SQL Exam</title>
-    <!-- Apply saved theme before CSS renders to prevent flash -->
-    <script>
-        (function(){
-            var t = localStorage.getItem("exam_global_theme") || "dracula";
-            document.documentElement.setAttribute("data-theme", t);
-        })();
-    </script>
+    <title>Portal Pengawas - Ujian Praktikum Basis Data</title>
+    <script>(function(){var t=localStorage.getItem("exam_global_theme")||"dracula";document.documentElement.setAttribute("data-theme",t);})();</script>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .alp-root{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:var(--bg-app);}
+        .alp-wrap{width:100%;max-width:380px;}
+        .alp-top{text-align:center;margin-bottom:2rem;}
+        .alp-badge{display:inline-flex;align-items:center;gap:.5rem;background:color-mix(in srgb,var(--primary) 15%,var(--bg-surface));border:1px solid color-mix(in srgb,var(--primary) 40%,transparent);padding:.3rem .75rem;border-radius:var(--radius-sm);margin-bottom:.9rem;}
+        .alp-badge-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);}
+        .alp-badge-text{font-size:.72rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.08em;}
+        .alp-title{font-size:1.3rem;font-weight:700;color:var(--text-main);margin-bottom:.25rem;}
+        .alp-sub{font-size:.83rem;color:var(--text-muted);}
+        .alp-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:2rem;box-shadow:0 8px 30px rgba(0,0,0,.25);}
+        .alp-back{text-align:center;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-subtle);}
+        .alp-back a{font-size:.82rem;color:var(--accent);text-decoration:none;transition:opacity .15s;display:inline-flex;align-items:center;gap:.3rem;}
+        .alp-back a:hover{opacity:.75;}
+    </style>
 </head>
-<body class="login-page-wrapper">
-
-    <div class="login-card">
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-            <span class="brand-logo-badge" style="background-color: #475569;">ADMIN PANEL</span>
-            <h1 style="font-size: 1.35rem; margin-top: 0.75rem;">Portal Dosen & Pengawas</h1>
-            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Masukkan Master Key untuk mengelola ujian</p>
-        </div>
-
-        {% if error %}
-        <div class="alert-box alert-danger">
-            {{ error }}
-        </div>
-        {% endif %}
-
-        <form method="POST" action="/admin/login">
-            <div class="form-group">
-                <label for="master_key" class="form-label">Master Key Dosen</label>
-                <input 
-                    type="password" 
-                    id="master_key" 
-                    name="master_key" 
-                    class="form-input" 
-                    placeholder="Masukkan master key..." 
-                    required 
-                    autofocus
-                >
+<body style="margin:0;padding:0;">
+<div class="alp-root">
+    <div class="alp-wrap">
+        <div class="alp-top">
+            <div class="alp-badge">
+                <span class="alp-badge-dot"></span>
+                <span class="alp-badge-text">Admin Panel</span>
             </div>
+            <h1 class="alp-title">Portal Dosen &amp; Pengawas</h1>
+            <p class="alp-sub">Masukkan master key untuk mengelola sesi ujian.</p>
+        </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
-                Masuk ke Dashboard Pengawas
-            </button>
-        </form>
+        <div class="alp-card">
+            {% if error %}
+            <div class="alert-box alert-danger" role="alert" style="margin-bottom:1.25rem;">{{ error }}</div>
+            {% endif %}
 
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
-            <a href="/login" style="color: var(--accent); text-decoration: none; font-size: 0.85rem;">
-                &larr; Kembali ke Login Mahasiswa
-            </a>
+            <form method="POST" action="/admin/login" id="admin-login-form">
+                <div class="form-group">
+                    <label for="master_key" class="form-label">Master Key Dosen</label>
+                    <input type="password" id="master_key" name="master_key"
+                        class="form-input" placeholder="Masukkan master key..."
+                        required autofocus aria-describedby="key-hint">
+                    <div id="key-hint" style="font-size:.73rem;color:var(--text-muted);margin-top:.3rem;">Key ini ditetapkan oleh administrator sistem.</div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;padding:.7rem;font-size:.9rem;" id="btn-admin-login">
+                    Masuk ke Dashboard Pengawas
+                </button>
+            </form>
+
+            <div class="alp-back">
+                <a href="/login">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><polyline points="15 18 9 12 15 6"/></svg>
+                    Kembali ke Login Mahasiswa
+                </a>
+            </div>
         </div>
     </div>
-
+</div>
 </body>
 </html>

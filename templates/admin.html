@@ -15,13 +15,14 @@
     <!-- Header Navigation -->
     <header class="app-header">
         <div class="brand-wrapper">
-            <span class="brand-logo-badge" style="background-color: #475569;">ADMIN CONSOLE</span>
-            <div class="brand-title">Dashboard Pengawas Ujian Basis Data</div>
+            <span class="brand-logo-badge" style="background-color: var(--primary);">ADMIN</span>
+            <div class="brand-title">Dashboard Pengawas Ujian</div>
         </div>
 
         <div class="header-meta">
-            <div class="user-tag" title="Alamat IP Server Host">
-                <span>Host IP: <strong>{{ host_ip }}</strong></span>
+            <div class="user-tag" title="Alamat IP Server Host" style="gap:.4rem;">
+                <span style="font-size:.72rem;color:var(--text-muted);font-weight:600;">HOST</span>
+                <span style="font-family:var(--font-mono);font-size:.82rem;">{{ host_ip }}</span>
             </div>
             <!-- Global Theme Switcher -->
             <div class="global-theme-switcher" title="Ganti tema tampilan">
@@ -34,16 +35,14 @@
                     <option value="gruvbox">Gruvbox Dark</option>
                     <option value="solarized">Solarized Dark</option>
                     <option value="ayu">Ayu Dark</option>
-                    <option value="light">☀️ Light Mode</option>
+                    <option value="light">Light Mode</option>
                 </select>
             </div>
             <button type="button" class="btn btn-secondary btn-sm" id="btn-open-change-pw-modal"
                 title="Ubah Password Master Admin/Pengawas">
                 Ganti Password
             </button>
-            <a href="/admin/logout" class="btn btn-secondary btn-sm">
-                Logout Pengawas
-            </a>
+            <a href="/admin/logout" class="btn btn-secondary btn-sm">Logout</a>
         </div>
     </header>
 
@@ -71,20 +70,24 @@
 
         <!-- Navigation Tabs -->
         <nav class="admin-tabs" role="tablist">
-            <button type="button" class="admin-tab-btn active" data-tab="monitoring" role="tab">
-                1. Monitoring Mahasiswa
+            <button type="button" class="admin-tab-btn active" data-tab="monitoring" role="tab" aria-selected="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Monitoring
             </button>
-            <button type="button" class="admin-tab-btn" data-tab="questions" role="tab">
-                2. Manajemen Soal Ujian
+            <button type="button" class="admin-tab-btn" data-tab="questions" role="tab" aria-selected="false">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Soal Ujian
             </button>
-            <button type="button" class="admin-tab-btn" data-tab="database" role="tab">
-                3. Database Sandbox (classicmodels)
+            <button type="button" class="admin-tab-btn" data-tab="database" role="tab" aria-selected="false">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                Database
             </button>
             <button type="button" class="admin-tab-btn" data-tab="logs" role="tab">
                 4. Log Aktivitas & Kecurangan
             </button>
-            <button type="button" class="admin-tab-btn" data-tab="export" role="tab">
-                5. Export Hasil Ujian
+            <button type="button" class="admin-tab-btn" data-tab="export" role="tab" aria-selected="false">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export Hasil
             </button>
         </nav>
 
@@ -92,12 +95,11 @@
         <section id="tab-monitoring" class="tab-pane">
 
             <!-- Exam Control Card -->
-            <div class="admin-card" style="border-color: var(--border-strong); position: relative; overflow: hidden; margin-bottom: 1rem;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent));"></div>
+            <div class="admin-card" style="border-color: var(--border-strong); margin-bottom: 1rem;">
                 <div class="admin-card-header">
                     <div>
-                        <h2 style="font-size: 1.1rem;">Kontrol Ujian</h2>
-                        <p style="font-size: 0.85rem;">Buka atau tutup akses lembar soal untuk seluruh peserta.</p>
+                        <h2 style="font-size: 1.05rem;">Kontrol Ujian</h2>
+                        <p style="font-size: 0.83rem;">Buka atau tutup akses lembar soal untuk seluruh peserta.</p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                         <div style="display: flex; align-items: center; gap: 0.4rem;">

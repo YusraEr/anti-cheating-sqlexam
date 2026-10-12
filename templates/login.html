@@ -1,78 +1,122 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="dracula">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Ujian Praktikum Basis Data - Offline Exam</title>
-    <!-- Apply saved theme before CSS renders to prevent flash -->
-    <script>
-        (function(){
-            var t = localStorage.getItem("exam_global_theme") || "dracula";
-            document.documentElement.setAttribute("data-theme", t);
-        })();
-    </script>
+    <meta name="description" content="Login mahasiswa untuk mengakses lembar ujian praktikum basis data secara offline.">
+    <title>Login Mahasiswa - Ujian Praktikum Basis Data</title>
+    <script>(function(){var t=localStorage.getItem("exam_global_theme")||"dracula";document.documentElement.setAttribute("data-theme",t);})();</script>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .lp-root{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;background-color:var(--bg-app);}
+        @media(max-width:720px){.lp-root{grid-template-columns:1fr;}.lp-left{display:none;}}
+        .lp-left{background-color:var(--bg-surface);border-right:1px solid var(--border-subtle);display:flex;flex-direction:column;justify-content:space-between;padding:3rem 2.5rem;position:relative;overflow:hidden;}
+        .lp-left::before{content:"";position:absolute;top:-120px;right:-80px;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 12%,transparent),transparent 70%);pointer-events:none;}
+        .lp-left::after{content:"";position:absolute;bottom:-100px;left:-60px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--primary) 10%,transparent),transparent 70%);pointer-events:none;}
+        .lp-brand{display:flex;align-items:center;gap:.75rem;z-index:1;position:relative;}
+        .lp-brand-badge{background:var(--primary);color:var(--primary-text);font-weight:800;font-size:.8rem;padding:.3rem .65rem;border-radius:var(--radius-sm);letter-spacing:.08em;}
+        .lp-brand-name{font-size:1.05rem;font-weight:700;color:var(--text-main);}
+        .lp-hero{z-index:1;position:relative;}
+        .lp-hero-title{font-size:2rem;font-weight:800;color:var(--text-main);line-height:1.2;margin-bottom:.75rem;}
+        .lp-hero-title span{color:var(--accent);}
+        .lp-hero-sub{font-size:.9rem;color:var(--text-muted);line-height:1.6;max-width:340px;}
+        .lp-features{display:flex;flex-direction:column;gap:.65rem;z-index:1;position:relative;}
+        .lp-feat{display:flex;align-items:center;gap:.6rem;font-size:.8rem;color:var(--text-muted);}
+        .lp-feat-dot{width:6px;height:6px;border-radius:50%;background:var(--success);flex-shrink:0;}
+        .lp-right{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 2rem;}
+        .lp-card{width:100%;max-width:400px;}
+        .lp-card-header{margin-bottom:2rem;}
+        .lp-card-title{font-size:1.35rem;font-weight:700;color:var(--text-main);margin-bottom:.25rem;}
+        .lp-card-sub{font-size:.85rem;color:var(--text-muted);}
+        .lp-notice{background:color-mix(in srgb,var(--warning) 8%,var(--bg-surface));border:1px solid color-mix(in srgb,var(--warning) 35%,transparent);border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1.5rem;}
+        .lp-notice-title{font-size:.75rem;font-weight:700;color:var(--warning);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;}
+        .lp-notice ul{padding-left:1.15rem;margin:0;}
+        .lp-notice li{font-size:.78rem;color:var(--text-muted);line-height:1.55;margin-bottom:.25rem;}
+        .lp-notice li:last-child{margin-bottom:0;}
+        .lp-admin-link{text-align:center;margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border-subtle);}
+        .lp-admin-link a{font-size:.82rem;color:var(--accent);text-decoration:none;transition:opacity .15s;}
+        .lp-admin-link a:hover{opacity:.75;}
+        /* Shared mobile brand for right panel */
+        .lp-mobile-brand{display:none;margin-bottom:1.75rem;text-align:center;}
+        @media(max-width:720px){.lp-mobile-brand{display:block;}}
+        .lp-mobile-badge{background:var(--primary);color:var(--primary-text);font-weight:800;font-size:.8rem;padding:.3rem .65rem;border-radius:var(--radius-sm);letter-spacing:.08em;display:inline-block;margin-bottom:.5rem;}
+        .lp-mobile-title{font-size:1.1rem;font-weight:700;color:var(--text-main);}
+    </style>
 </head>
-
-<body class="login-page-wrapper">
-
-    <div class="login-card">
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-            <span class="brand-logo-badge" style="font-size: 0.95rem; padding: 0.35rem 0.75rem;">SQL EXAM</span>
-            <h1 style="font-size: 1.4rem; margin-top: 0.75rem;">Ujian Praktikum Basis Data</h1>
-            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Laboratorium Basis Data - Offline Network</p>
+<body style="margin:0;padding:0;background-color:var(--bg-app);">
+<div class="lp-root">
+    <!-- Left: Brand panel -->
+    <div class="lp-left">
+        <div class="lp-brand">
+            <span class="lp-brand-badge">SQL EXAM</span>
+            <span class="lp-brand-name">Lab. Basis Data</span>
         </div>
-
-        {% if error %}
-        <div class="alert-box alert-danger">
-            {{ error }}
+        <div class="lp-hero">
+            <h1 class="lp-hero-title">Ujian Praktikum<br><span>Basis Data</span></h1>
+            <p class="lp-hero-sub">Platform ujian SQL berbasis offline. Tulis query PostgreSQL langsung di browser tanpa koneksi internet.</p>
         </div>
-        {% endif %}
-
-        {% if message %}
-        <div class="alert-box alert-warning">
-            {{ message }}
-        </div>
-        {% endif %}
-
-        <form method="POST" action="/login" id="login-form">
-            <div class="form-group">
-                <label for="nim" class="form-label">Nomor Induk Mahasiswa (NIM)</label>
-                <input type="text" id="nim" name="nim" class="form-input" placeholder="Contoh: H071231052"
-                    value="{{ nim_value or '' }}" required autocomplete="off" autofocus>
-            </div>
-
-            <div class="form-group">
-                <label for="name" class="form-label">Nama Lengkap Mahasiswa</label>
-                <input type="text" id="name" name="name" class="form-input" placeholder="Contoh: Yusra Erlangga Putra"
-                    value="{{ name_value or '' }}" required autocomplete="off">
-            </div>
-
-            <div
-                style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--text-muted);">
-                <strong style="color: var(--warning);">Perhatian & Ketentuan Ujian:</strong>
-                <ul style="padding-left: 1.2rem; margin-top: 0.35rem; line-height: 1.5;">
-                    <li>Setiap NIM terikat pada 1 perangkat (IP Binding). Login dari laptop lain akan otomatis
-                        membatalkan sesi ini.</li>
-                    <li>Sistem mencatat aktivitas perpindahan tab atau jendela browser sebagai log kecurangan.</li>
-                    <li>Fitur copy-paste pada editor SQL dinonaktifkan.</li>
-                </ul>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
-                Masuk ke Lembar Ujian
-            </button>
-        </form>
-
-        <div
-            style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
-            <a href="/admin/login" style="color: var(--accent); text-decoration: none; font-size: 0.85rem;">
-                Akses Dosen / Pengawas Ujian &rarr;
-            </a>
+        <div class="lp-features">
+            <div class="lp-feat"><span class="lp-feat-dot"></span>100% offline, tidak butuh internet</div>
+            <div class="lp-feat"><span class="lp-feat-dot"></span>Editor SQL dengan autocomplete</div>
+            <div class="lp-feat"><span class="lp-feat-dot"></span>Eksekusi query real-time ke PostgreSQL</div>
+            <div class="lp-feat"><span class="lp-feat-dot"></span>Referensi ERD schema langsung di halaman soal</div>
         </div>
     </div>
 
-</body>
+    <!-- Right: Login form -->
+    <div class="lp-right">
+        <div class="lp-card">
+            <div class="lp-mobile-brand">
+                <span class="lp-mobile-badge">SQL EXAM</span>
+                <div class="lp-mobile-title">Ujian Praktikum Basis Data</div>
+            </div>
+            <div class="lp-card-header">
+                <div class="lp-card-title">Masuk ke Lembar Ujian</div>
+                <div class="lp-card-sub">Isi data diri Anda dengan benar sesuai KTM.</div>
+            </div>
 
+            {% if error %}
+            <div class="alert-box alert-danger" role="alert">{{ error }}</div>
+            {% endif %}
+            {% if message %}
+            <div class="alert-box alert-warning" role="alert">{{ message }}</div>
+            {% endif %}
+
+            <form method="POST" action="/login" id="login-form" novalidate>
+                <div class="form-group">
+                    <label for="nim" class="form-label">NIM (Nomor Induk Mahasiswa)</label>
+                    <input type="text" id="nim" name="nim" class="form-input"
+                        placeholder="Contoh: H071231052"
+                        value="{{ nim_value or '' }}" required autocomplete="off" autofocus
+                        aria-describedby="nim-hint">
+                    <div id="nim-hint" style="font-size:.73rem;color:var(--text-muted);margin-top:.3rem;">Sesuaikan dengan NIM yang terdaftar di sistem.</div>
+                </div>
+                <div class="form-group">
+                    <label for="name" class="form-label">Nama Lengkap</label>
+                    <input type="text" id="name" name="name" class="form-input"
+                        placeholder="Contoh: Yusra Erlangga Putra"
+                        value="{{ name_value or '' }}" required autocomplete="off">
+                </div>
+
+                <div class="lp-notice" role="note">
+                    <div class="lp-notice-title">Ketentuan Ujian</div>
+                    <ul>
+                        <li>Setiap NIM terikat 1 perangkat. Login dari perangkat lain otomatis mengakhiri sesi ini.</li>
+                        <li>Perpindahan tab atau jendela tercatat sebagai log kecurangan.</li>
+                        <li>Copy-paste pada editor SQL dinonaktifkan.</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%;padding:.7rem;font-size:.95rem;" id="btn-login-submit">
+                    Masuk ke Lembar Ujian
+                </button>
+            </form>
+
+            <div class="lp-admin-link">
+                <a href="/admin/login">Akses Dosen / Pengawas &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
 </html>
