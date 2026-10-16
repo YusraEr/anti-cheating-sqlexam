@@ -590,6 +590,29 @@ async def api_admin_waiting_participants(request: Request):
     exam_state = database.get_exam_state()
     return {"participants": participants, "count": len(participants), "exam_state": exam_state}
 
+@app.get("/api/admin/waiting/messages")
+async def api_admin_waiting_messages(request: Request, since_id: int = 0):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+    messages = database.get_waiting_room_messages(since_id=since_id)
+    return {"messages": messages}
+
+@app.post("/api/admin/waiting/messages")
+async def api_admin_post_waiting_message(request: Request, body: WaitingMessageRequest):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+    msg = database.post_waiting_room_message("ADMIN", "Pengawas", body.message)
+    if not msg:
+        raise HTTPException(status_code=400, detail="Pesan kosong atau terlalu panjang.")
+    return {"status": "ok", "message": msg}
+
+@app.post("/api/admin/waiting/clear-messages")
+async def api_admin_clear_waiting_messages(request: Request):
+    if not verify_admin_auth(request):
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+    database.clear_waiting_room_messages()
+    return {"status": "success", "message": "Pesan chat waiting room berhasil dibersihkan."}
+
 @app.get("/api/admin/schema")
 async def api_admin_schema(request: Request):
     if not verify_admin_auth(request):

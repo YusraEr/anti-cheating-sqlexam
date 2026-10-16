@@ -1536,20 +1536,36 @@ def mark_student_in_exam(nim: str) -> None:
     conn.close()
 
 def get_waiting_room_messages(since_id: int = 0, limit: int = 50) -> list:
-    """Returns chat messages newer than since_id."""
+    """Returns chat messages newer than since_id, or the latest `limit` messages when since_id=0."""
     conn = get_sqlite_conn()
     cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT id, nim, name, message, sent_at
-        FROM waiting_room_messages
-        WHERE id > ?
-        ORDER BY id ASC
-        LIMIT ?;
-        """,
-        (since_id, limit)
-    )
-    rows = cur.fetchall()
+    if since_id > 0:
+        cur.execute(
+            """
+            SELECT id, nim, name, message, sent_at
+            FROM waiting_room_messages
+            WHERE id > ?
+            ORDER BY id ASC
+            LIMIT ?;
+            """,
+            (since_id, limit)
+        )
+        rows = cur.fetchall()
+    else:
+        cur.execute(
+            """
+            SELECT id, nim, name, message, sent_at
+            FROM (
+                SELECT id, nim, name, message, sent_at
+                FROM waiting_room_messages
+                ORDER BY id DESC
+                LIMIT ?
+            )
+            ORDER BY id ASC;
+            """,
+            (limit,)
+        )
+        rows = cur.fetchall()
     conn.close()
     return [dict(r) for r in rows]
 

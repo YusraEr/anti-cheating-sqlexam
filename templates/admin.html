@@ -94,34 +94,82 @@
         <!-- Tab 1: Live Monitoring -->
         <section id="tab-monitoring" class="tab-pane">
 
-            <!-- Exam Control Card -->
-            <div class="admin-card" style="border-color: var(--border-strong); margin-bottom: 1rem;">
-                <div class="admin-card-header">
+            <div class="monitoring-top-grid">
+                <!-- Exam Control Card -->
+                <div class="admin-card" style="border-color: var(--border-strong); display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
-                        <h2 style="font-size: 1.05rem;">Kontrol Ujian</h2>
-                        <p style="font-size: 0.83rem;">Buka atau tutup akses lembar soal untuk seluruh peserta.</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                        <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="font-size: 0.78rem; color: var(--text-muted);">Status:</span>
-                            <span id="admin-exam-state-badge" class="status-badge badge-warning">Menunggu</span>
+                        <div class="admin-card-header" style="margin-bottom: 0.75rem;">
+                            <div>
+                                <h2 style="font-size: 1.05rem;">Kontrol Ujian</h2>
+                                <p style="font-size: 0.83rem;">Buka atau tutup akses lembar soal untuk seluruh peserta.</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <span style="font-size: 0.78rem; color: var(--text-muted);">Status:</span>
+                                    <span id="admin-exam-state-badge" class="status-badge badge-warning">Menunggu</span>
+                                </div>
+                                <button type="button" class="btn btn-success btn-sm" id="btn-exam-start"
+                                    title="Buka lembar soal untuk semua peserta di waiting room">
+                                    Mulai Ujian
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" id="btn-exam-stop"
+                                    title="Tutup akses soal. Peserta kembali ke waiting room." disabled>
+                                    Hentikan Ujian
+                                </button>
+                            </div>
                         </div>
-                        <button type="button" class="btn btn-success btn-sm" id="btn-exam-start"
-                            title="Buka lembar soal untuk semua peserta di waiting room">
-                            Mulai Ujian
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm" id="btn-exam-stop"
-                            title="Tutup akses soal. Peserta kembali ke waiting room." disabled>
-                            Hentikan Ujian
-                        </button>
+                        <div style="display: flex; gap: 1.25rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); align-items: flex-start;">
+                            <div style="flex-shrink: 0;">
+                                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.2rem;">Di Waiting Room</div>
+                                <div style="font-size: 1.6rem; font-weight: 700; color: var(--text-main);" id="admin-waiting-count">0</div>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.35rem;">Peserta Terhubung</div>
+                                <div id="admin-waiting-names" style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; max-height: 120px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 1.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); align-items: center;">
-                    <div style="flex-shrink: 0;">
-                        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.2rem;">Di Waiting Room</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main);" id="admin-waiting-count">0</div>
+
+                <!-- Live Chat Waiting Room (YouTube Live Stream style) -->
+                <div class="admin-card admin-live-chat-card" style="border-color: var(--border-strong);">
+                    <div class="admin-card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="live-status-dot" title="Live stream aktif"></span>
+                            <div>
+                                <h2 style="font-size: 0.95rem; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+                                    Live Chat Waiting Room
+                                </h2>
+                                <p style="font-size: 0.75rem; margin: 0; color: var(--text-muted);">
+                                    Stream real-time • Maks. 50 pesan
+                                </p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span id="admin-chat-count-badge" style="font-size: 0.7rem; padding: 0.15rem 0.5rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 999px; color: var(--text-muted);">0 pesan</span>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-admin-clear-chat" title="Bersihkan riwayat pesan chat" style="height: 28px; padding: 0 0.5rem; font-size: 0.72rem;">
+                                Bersihkan
+                            </button>
+                        </div>
                     </div>
-                    <div id="admin-waiting-names" style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; flex: 1;"></div>
+
+                    <!-- Chat Message Feed -->
+                    <div class="admin-chat-stream-wrapper">
+                        <div class="admin-chat-stream" id="admin-chat-messages" tabindex="0" aria-label="Live chat messages">
+                            <div class="admin-chat-empty" id="admin-chat-empty">Belum ada obrolan di waiting room...</div>
+                        </div>
+                        <button type="button" class="admin-chat-scroll-bottom" id="admin-chat-scroll-bottom" style="display: none;" title="Scroll ke pesan terbaru">
+                            ↓ Pesan Baru
+                        </button>
+                    </div>
+
+                    <!-- Proctor Announcement / Send Form -->
+                    <form id="admin-chat-form" class="admin-chat-form" autocomplete="off" style="margin-top: 0.5rem; display: flex; gap: 0.4rem;">
+                        <input type="text" id="admin-chat-input" class="form-input" placeholder="Kirim pesan / pengumuman ke peserta..." maxlength="300" autocomplete="off" style="height: 34px; font-size: 0.8rem; padding: 0.4rem 0.65rem;">
+                        <button type="submit" class="btn btn-primary btn-sm" id="btn-admin-chat-send" style="height: 34px; padding: 0 0.75rem; font-size: 0.78rem; flex-shrink: 0;">
+                            Kirim
+                        </button>
+                    </form>
                 </div>
             </div>
 

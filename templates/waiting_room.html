@@ -233,12 +233,25 @@
         var box=document.getElementById("wr-chat-messages");
         if(!box)return;
         var isMe=msg.nim===MY_NIM;
+        var isAdmin=msg.nim==="ADMIN";
         var time=formatTime(msg.sent_at);
         var el=document.createElement("div");
-        el.className="wr-msg"+(isMe?" is-mine":"");
-        el.innerHTML='<div class="wr-msg-meta">'+(!isMe?'<strong>'+escHtml(msg.name)+'</strong>':'')+' <span>'+time+'</span></div>'
-            +'<div class="wr-msg-bubble">'+escHtml(msg.message)+'</div>';
+        el.className="wr-msg"+(isMe?" is-mine":"")+(isAdmin?" is-admin-announcement":"");
+        var senderLabel = !isMe ? (isAdmin ? '<strong style="color:var(--warning);font-weight:700;">[Pengawas] '+escHtml(msg.name)+'</strong>' : '<strong>'+escHtml(msg.name)+'</strong>') : '';
+        var bubbleStyle = isAdmin ? ' style="border:1px solid var(--warning);background:color-mix(in srgb,var(--warning) 12%,var(--bg-surface-elevated));color:var(--text-main);"' : '';
+        el.innerHTML='<div class="wr-msg-meta">'+senderLabel+' <span>'+time+'</span></div>'
+            +'<div class="wr-msg-bubble"'+bubbleStyle+'>'+escHtml(msg.message)+'</div>';
         box.appendChild(el);
+        while(box.children.length > 50){
+            var first = box.firstElementChild;
+            if(first && !first.classList.contains("wr-msg-system")) {
+                first.remove();
+            } else if (box.children.length > 1 && box.children[1]) {
+                box.children[1].remove();
+            } else {
+                break;
+            }
+        }
         box.scrollTop=box.scrollHeight;
     }
 

@@ -56,6 +56,11 @@ document.addEventListener("DOMContentLoaded", () => {
     loadWaitingRoomPanel();
     setInterval(loadWaitingRoomPanel, 4000);
 
+    // Waiting room live chat polling every 2.5 seconds (YouTube Live style)
+    initAdminChat();
+    loadWaitingRoomChat();
+    setInterval(loadWaitingRoomChat, 2500);
+
     // Event Bindings
     document.getElementById("btn-refresh-monitor")?.addEventListener("click", loadDashboardData);
     document.getElementById("btn-exam-start")?.addEventListener("click", startExam);
@@ -171,6 +176,13 @@ async function startExam() {
         showToast(data.message || "Ujian dimulai.", "success");
         updateExamStateBadge("active");
         loadWaitingRoomPanel();
+        adminLastMsgId = 0;
+        const chatContainer = document.getElementById("admin-chat-messages");
+        if (chatContainer) {
+            chatContainer.innerHTML = '<div class="admin-chat-empty" id="admin-chat-empty">Belum ada obrolan di waiting room...</div>';
+        }
+        const countBadge = document.getElementById("admin-chat-count-badge");
+        if (countBadge) countBadge.textContent = "0 pesan";
     } catch (_) {
         showToast("Gagal memulai ujian.", "danger");
         if (startBtn) startBtn.disabled = false;
@@ -190,6 +202,170 @@ async function stopExam() {
     } catch (_) {
         showToast("Gagal menghentikan ujian.", "danger");
         if (stopBtn) stopBtn.disabled = false;
+    }
+}
+
+// ==============================================================================
+// Live Chat Waiting Room (YouTube Live Stream style)
+// ==============================================================================
+let adminLastMsgId = 0;
+const MAX_ADMIN_CHAT_MESSAGES = 50;
+
+async function loadWaitingRoomChat() {
+    try {
+        const res = await fetch(`/api/admin/waiting/messages?since_id=${adminLastMsgId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const messages = data.messages || [];
+        if (messages.length > 0) {
+            appendAdminChatMessages(messages);
+            adminLastMsgId = messages[messages.length - 1].id;
+        }
+    } catch (_) {}
+}
+
+function appendAdminChatMessages(messages) {
+    const chatContainer = document.getElementById("admin-chat-messages");
+    const countBadge = document.getElementById("admin-chat-count-badge");
+    const scrollBottomBtn = document.getElementById("admin-chat-scroll-bottom");
+    if (!chatContainer) return;
+
+    const emptyPlaceholder = document.getElementById("admin-chat-empty");
+    if (emptyPlaceholder) {
+        emptyPlaceholder.remove();
+    }
+
+    const wasAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight <= 45;
+
+    messages.forEach(msg => {
+        if (chatContainer.querySelector(`[data-id="${msg.id}"]`)) return;
+
+        const item = document.createElement("div");
+        const isAdmin = msg.nim === "ADMIN";
+        item.className = "admin-chat-msg" + (isAdmin ? " is-admin" : "");
+        item.dataset.id = msg.id;
+
+        const timeStr = formatChatTime(msg.sent_at);
+        const escapedName = escapeHtml(msg.name || "Peserta");
+        const escapedMsg = escapeHtml(msg.message || "");
+        const badgeHtml = isAdmin 
+            ? `<span class="admin-chat-badge-proctor">Pengawas</span>`
+            : `<span class="admin-chat-badge-nim">(${escapeHtml(msg.nim || "")})</span>`;
+
+        item.innerHTML = `
+            <div class="admin-chat-msg-header">
+                <span class="admin-chat-msg-time">${timeStr}</span>
+                <span class="admin-chat-msg-sender">${escapedName}</span>
+                ${badgeHtml}
+            </div>
+            <div class="admin-chat-msg-text">${escapedMsg}</div>
+        `;
+
+        chatContainer.appendChild(item);
+    });
+
+    // Enforce max messages limit (like YouTube Live Chat buffer)
+    while (chatContainer.children.length > MAX_ADMIN_CHAT_MESSAGES) {
+        chatContainer.firstElementChild.remove();
+    }
+
+    // Update count badge
+    if (countBadge) {
+        countBadge.textContent = `${chatContainer.children.length} pesan`;
+    }
+
+    // Auto-scroll or show "new messages" button
+    if (wasAtBottom) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        if (scrollBottomBtn) scrollBottomBtn.style.display = "none";
+    } else {
+        if (scrollBottomBtn) scrollBottomBtn.style.display = "block";
+    }
+}
+
+function formatChatTime(iso) {
+    if (!iso) return "";
+    try {
+        const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+        return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    } catch (_) {
+        return "";
+    }
+}
+
+function initAdminChat() {
+    const chatContainer = document.getElementById("admin-chat-messages");
+    const scrollBottomBtn = document.getElementById("admin-chat-scroll-bottom");
+    const form = document.getElementById("admin-chat-form");
+    const input = document.getElementById("admin-chat-input");
+    const sendBtn = document.getElementById("btn-admin-chat-send");
+    const clearBtn = document.getElementById("btn-admin-clear-chat");
+
+    if (chatContainer && scrollBottomBtn) {
+        chatContainer.addEventListener("scroll", () => {
+            const isAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight <= 35;
+            if (isAtBottom) {
+                scrollBottomBtn.style.display = "none";
+            }
+        });
+
+        scrollBottomBtn.addEventListener("click", () => {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            scrollBottomBtn.style.display = "none";
+        });
+    }
+
+    if (form && input && sendBtn) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (!text || input.disabled) return;
+
+            input.disabled = true;
+            sendBtn.disabled = true;
+            try {
+                const res = await fetch("/api/admin/waiting/messages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: text })
+                });
+                if (res.ok) {
+                    input.value = "";
+                    await loadWaitingRoomChat();
+                } else {
+                    showToast("Gagal mengirim pesan chat.", "danger");
+                }
+            } catch (_) {
+                showToast("Gagal mengirim pesan chat.", "danger");
+            } finally {
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", async () => {
+            if (!confirm("Bersihkan seluruh pesan chat di waiting room?")) return;
+            try {
+                const res = await fetch("/api/admin/waiting/clear-messages", { method: "POST" });
+                if (res.ok) {
+                    showToast("Chat waiting room telah dibersihkan.", "success");
+                    adminLastMsgId = 0;
+                    if (chatContainer) {
+                        chatContainer.innerHTML = '<div class="admin-chat-empty" id="admin-chat-empty">Belum ada obrolan di waiting room...</div>';
+                    }
+                    const countBadge = document.getElementById("admin-chat-count-badge");
+                    if (countBadge) countBadge.textContent = "0 pesan";
+                    if (scrollBottomBtn) scrollBottomBtn.style.display = "none";
+                } else {
+                    showToast("Gagal membersihkan chat.", "danger");
+                }
+            } catch (_) {
+                showToast("Gagal membersihkan chat.", "danger");
+            }
+        });
     }
 }
 

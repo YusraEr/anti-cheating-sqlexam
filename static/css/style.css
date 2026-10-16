@@ -1416,3 +1416,185 @@ code, pre {
   .btn { min-height: 40px; }
   .btn-sm { min-height: 32px; }
 }
+
+/* ==============================================================================
+   Admin Live Chat Waiting Room (YouTube Live Stream style)
+   ============================================================================== */
+.monitoring-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+  .monitoring-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-live-chat-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 290px;
+}
+
+.live-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--danger);
+  box-shadow: 0 0 0 0 rgba(255, 85, 85, 0.7);
+  display: inline-block;
+  animation: live-pulse-dot 1.8s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes live-pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgba(255, 85, 85, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(255, 85, 85, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 85, 85, 0); }
+}
+
+.admin-chat-stream-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+}
+
+.admin-chat-stream {
+  flex: 1;
+  height: 200px;
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background-color: var(--bg-output);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  scroll-behavior: smooth;
+}
+
+.admin-chat-stream::-webkit-scrollbar {
+  width: 5px;
+}
+.admin-chat-stream::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-chat-stream::-webkit-scrollbar-thumb {
+  background-color: var(--border-subtle);
+  border-radius: 4px;
+}
+
+.admin-chat-empty {
+  color: var(--text-subtle);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  font-style: italic;
+}
+
+.admin-chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  animation: chatItemIn 0.2s ease-out;
+  word-break: break-word;
+}
+
+.admin-chat-msg.is-admin {
+  background-color: color-mix(in srgb, var(--accent) 12%, var(--bg-surface-elevated));
+  border-color: var(--accent);
+}
+
+@keyframes chatItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-chat-msg-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.admin-chat-msg-time {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.admin-chat-msg-sender {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.admin-chat-msg.is-admin .admin-chat-msg-sender {
+  color: var(--warning);
+}
+
+.admin-chat-badge-proctor {
+  background: var(--warning);
+  color: #1a1a1a;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-chat-badge-nim {
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+}
+
+.admin-chat-msg-text {
+  font-size: 0.8rem;
+  color: var(--text-main);
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}
+
+.admin-chat-scroll-bottom {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--primary);
+  color: var(--primary-text);
+  border: 1px solid var(--border-strong);
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  z-index: 10;
+}
+
+.admin-chat-scroll-bottom:hover {
+  background-color: var(--primary-hover);
+  transform: translateX(-50%) translateY(-1px);
+}
