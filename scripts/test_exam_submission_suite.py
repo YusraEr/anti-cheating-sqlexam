@@ -121,6 +121,8 @@ INSERT INTO hewan (id_hewan, nama_hewan, spesies, id_pemilik) VALUES
             cur = conn.cursor()
             cur.execute("DELETE FROM submissions WHERE user_id IN (SELECT id FROM users WHERE nim = ?);", (cls.test_nim,))
             cur.execute("DELETE FROM users WHERE nim = ?;", (cls.test_nim,))
+            cur.execute("DELETE FROM questions WHERE category = 'FINAL-A';")
+            cur.execute("DELETE FROM exam_packages WHERE code = 'FINAL-A';")
         conn.close()
 
     def clean_student_sandbox(self):
@@ -641,6 +643,32 @@ INSERT INTO hewan (id_hewan, nama_hewan, spesies, id_pemilik) VALUES
         self.assertFalse(res["is_correct"])
         self.assertEqual(res["score"], 0)
         self.assertEqual(res["eval_status"], "wrong_database")
+
+    def test_tc_dql_07_decimal_trailing_zeros_and_integer_types(self):
+        """TC-DQL-07: Verify decimal trailing zeros (e.g. 68.30, 0.00) and integer types are preserved."""
+        # Test classicmodels numeric with trailing zero
+        res1 = database.execute_student_query(
+            "SELECT product_line, COUNT(*) AS total_produk, ROUND(AVG(buy_price), 2) AS rata_rata_harga FROM products WHERE product_line = 'Planes' GROUP BY product_line;",
+            active_db="classicmodels"
+        )
+        self.assertTrue(res1["success"])
+        self.assertEqual(len(res1["rows"]), 1)
+        row = res1["rows"][0]
+        self.assertEqual(row[0], "Planes")
+        self.assertEqual(row[1], 1)
+        self.assertIsInstance(row[1], int)
+        self.assertEqual(row[2], "68.30")
+
+        # Test pagila numeric 0.00 and boolean activebool
+        res2 = database.execute_student_query(
+            "SELECT activebool, amount FROM payment JOIN customer USING (customer_id) WHERE amount = 0.00 LIMIT 1;",
+            active_db="pagila"
+        )
+        self.assertTrue(res2["success"])
+        self.assertEqual(len(res2["rows"]), 1)
+        row2 = res2["rows"][0]
+        self.assertIsInstance(row2[0], bool)
+        self.assertEqual(row2[1], "0.00")
 
     # =========================================================================
     # KATEGORI D: Sandbox Lifecycle & Isolation - Soal No. 3

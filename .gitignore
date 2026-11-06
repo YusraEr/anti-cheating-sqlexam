@@ -36,3 +36,7 @@ scratch/
 
 # Raw Pagila zip extractions (keep data/pagila-schema.sql and data/pagila-data.sql)
 data/pagila-*/
+
+# Dynamic admin question uploads
+static/uploads/questions/output_*.png
+static/uploads/questions/qimg_*.png

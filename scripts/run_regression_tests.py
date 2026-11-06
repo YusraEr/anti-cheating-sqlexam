@@ -52,7 +52,7 @@ def main():
          f'"{py_bin}" scratch/test_session_recovery.py'),
         ("Admin Table Data Viewer & Inspector Verification",
          f'"{py_bin}" scratch/test_table_data_viewer.py'),
-        ("Comprehensive Exam Submission & Auto-Grader Test Suite (28 Tests)",
+        ("Comprehensive Exam Submission & Auto-Grader Test Suite (29 Tests)",
          f'"{py_bin}" scripts/test_exam_submission_suite.py'),
         ("Leaderboard Scores & ZIP Export Auto-Grader Test Suite (8 Tests)",
          f'"{py_bin}" scripts/test_leaderboard_and_zip_export.py'),

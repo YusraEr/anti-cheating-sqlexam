@@ -36,9 +36,24 @@ class LatecomerAndSessionLockTestSuite(unittest.TestCase):
 
         cls.clean_test_users()
 
+        conn = database.get_sqlite_conn()
+        with conn:
+            conn.execute("INSERT OR IGNORE INTO exam_packages (code, name, is_active) VALUES ('TEST-LOCK', 'Test Lock Package', 1);")
+            conn.execute("""
+                INSERT OR IGNORE INTO questions (question_number, title, description, score_weight, expected_query, category, target_database)
+                VALUES (1, 'Test Lock Q1', 'Test Question', 15, 'SELECT 1;', 'TEST-LOCK', 'pagila');
+            """)
+        conn.close()
+
     @classmethod
     def tearDownClass(cls):
         cls.clean_test_users()
+
+        conn = database.get_sqlite_conn()
+        with conn:
+            conn.execute("DELETE FROM questions WHERE category = 'TEST-LOCK';")
+            conn.execute("DELETE FROM exam_packages WHERE code = 'TEST-LOCK';")
+        conn.close()
 
     @classmethod
     def clean_test_users(cls):
@@ -119,8 +134,8 @@ class LatecomerAndSessionLockTestSuite(unittest.TestCase):
         # Simulate a mock submission
         conn = database.get_sqlite_conn()
         with conn:
-            q_row = conn.execute("SELECT id FROM questions LIMIT 1;").fetchone()
-            q_id = q_row["id"] if q_row else 1
+            q_row = conn.execute("SELECT id FROM questions WHERE category = 'TEST-LOCK' LIMIT 1;").fetchone()
+            q_id = q_row["id"]
             conn.execute(
                 """
                 INSERT INTO submissions (user_id, question_id, submitted_query, is_correct, score, feedback)

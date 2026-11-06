@@ -149,7 +149,8 @@ def get_allowed_databases() -> List[Dict[str, Any]]:
 
 
 def get_sqlite_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(SQLITE_DB_PATH, timeout=30.0)
+    db_path = os.environ.get("EXAM_SQLITE_PATH", SQLITE_DB_PATH)
+    conn = sqlite3.connect(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
     conn.execute("PRAGMA journal_mode = WAL;")
@@ -358,29 +359,62 @@ def init_system_db():
             except Exception:
                 pass
 
-        # Seed default exam packages if empty
-        cur.execute("SELECT COUNT(*) FROM exam_packages;")
-        if cur.fetchone()[0] == 0:
-            cur.execute("SELECT DISTINCT category FROM questions WHERE category IS NOT NULL AND category != '';")
-            cats = [r[0].strip().upper() for r in cur.fetchall() if r[0]]
-            if not cats:
-                cats = ["A", "B"]
-            for cat in sorted(set(cats)):
+        # Check if initial system seeding has been completed or marked
+        cur.execute("SELECT value FROM system_settings WHERE key = 'initial_seed_completed';")
+        seed_row = cur.fetchone()
+
+        if seed_row is None:
+            # Check if this database has already been configured or used by an admin
+            cur.execute("SELECT COUNT(*) FROM exam_packages;")
+            pkg_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM questions;")
+            q_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM exam_logs WHERE action_type IN ('create_package', 'delete_package', 'reset_all', 'delete_question', 'save_question');")
+            admin_activity_count = cur.fetchone()[0]
+
+            if pkg_count > 0 or q_count > 0 or admin_activity_count > 0:
+                # Existing database already touched by admin -> mark as completed so we NEVER seed dummy questions
                 cur.execute(
-                    "INSERT OR IGNORE INTO exam_packages (code, name, description, is_active) VALUES (?, ?, ?, 1);",
-                    (cat, f"Paket {cat}", f"Paket Soal Ujian Praktikum Basis Data {cat}")
+                    """
+                    INSERT INTO system_settings (key, value) VALUES ('initial_seed_completed', '1')
+                    ON CONFLICT(key) DO UPDATE SET value = '1';
+                    """
                 )
+                conn.commit()
+                is_seed_completed = True
+            else:
+                is_seed_completed = False
+        else:
+            is_seed_completed = (str(seed_row[0]).strip() == "1")
+
+        if not is_seed_completed:
+            # Seed default exam packages only if truly a fresh install and not yet configured
+            cur.execute("SELECT COUNT(*) FROM exam_packages;")
+            if cur.fetchone()[0] == 0:
+                cur.execute("SELECT DISTINCT category FROM questions WHERE category IS NOT NULL AND category != '';")
+                cats = [r[0].strip().upper() for r in cur.fetchall() if r[0]]
+                if not cats:
+                    cats = ["A", "B"]
+                for cat in sorted(set(cats)):
+                    cur.execute(
+                        "INSERT OR IGNORE INTO exam_packages (code, name, description, is_active) VALUES (?, ?, ?, 1);",
+                        (cat, f"Paket {cat}", f"Paket Soal Ujian Praktikum Basis Data {cat}")
+                    )
+                conn.commit()
+
+            # Seed initial exam questions only if truly a fresh install
+            cur.execute("SELECT COUNT(*) FROM questions;")
+            if cur.fetchone()[0] == 0:
+                seed_default_questions(conn)
+
+            # Mark initial seeding as permanently completed
+            cur.execute(
+                """
+                INSERT INTO system_settings (key, value) VALUES ('initial_seed_completed', '1')
+                ON CONFLICT(key) DO UPDATE SET value = '1';
+                """
+            )
             conn.commit()
-
-
-
-        # Seed initial exam questions if empty
-
-        cur.execute("SELECT COUNT(*) FROM questions;")
-
-        if cur.fetchone()[0] == 0:
-
-            seed_default_questions(conn)
 
 
 
@@ -2015,15 +2049,18 @@ def _normalize_cell_value(val: Any) -> Any:
     """Normalizes cell values for reliable comparisons between PostgreSQL and SQLite."""
 
     if val is None:
-
         return None
 
-    if isinstance(val, (int, float)):
+    if isinstance(val, bool):
+        return val
 
+    if isinstance(val, (int, float)):
+        return round(float(val), 4)
+
+    if isinstance(val, decimal.Decimal):
         return round(float(val), 4)
 
     if isinstance(val, (datetime.date, datetime.datetime)):
-
         return str(val)
 
     val_str = str(val).strip()
@@ -4980,31 +5017,26 @@ def execute_student_query(
                 for r in fetched:
 
                     row_items = []
-
                     for val in r:
-
-                        if isinstance(val, (datetime.date, datetime.datetime)):
-
-                            row_items.append(val.isoformat())
-
-                        elif hasattr(val, '__float__'):
-
-                            row_items.append(float(val))
-
-                        elif val is None:
-
+                        if val is None:
                             row_items.append(None)
-
+                        elif isinstance(val, bool):
+                            row_items.append(val)
+                        elif isinstance(val, int):
+                            row_items.append(val)
+                        elif isinstance(val, decimal.Decimal):
+                            row_items.append(str(val))
+                        elif isinstance(val, float):
+                            row_items.append(val)
+                        elif isinstance(val, (datetime.date, datetime.datetime, datetime.time)):
+                            row_items.append(val.isoformat())
+                        elif hasattr(val, '__float__'):
+                            row_items.append(float(val))
                         else:
-
                             s_val = str(val)
-
                             if len(s_val) > MAX_OUTPUT_CELL_CHARS:
-
                                 s_val = s_val[:MAX_OUTPUT_CELL_CHARS] + " ...[truncated]"
-
                             row_items.append(s_val)
-
                     rows.append(row_items)
 
             else:
@@ -5117,25 +5149,23 @@ def execute_student_query(
                 for r in fetched:
 
                     row_items = []
-
                     for val in r:
-
-                        if isinstance(val, (datetime.date, datetime.datetime)):
-
-                            row_items.append(val.isoformat())
-
-                        elif hasattr(val, '__float__'):
-
-                            row_items.append(float(val))
-
-                        elif val is None:
-
+                        if val is None:
                             row_items.append(None)
-
-                        else:
-
+                        elif isinstance(val, bool):
+                            row_items.append(val)
+                        elif isinstance(val, int):
+                            row_items.append(val)
+                        elif isinstance(val, decimal.Decimal):
                             row_items.append(str(val))
-
+                        elif isinstance(val, float):
+                            row_items.append(val)
+                        elif isinstance(val, (datetime.date, datetime.datetime, datetime.time)):
+                            row_items.append(val.isoformat())
+                        elif hasattr(val, '__float__'):
+                            row_items.append(float(val))
+                        else:
+                            row_items.append(str(val))
                     rows.append(row_items)
 
             else:
@@ -6066,10 +6096,16 @@ def get_table_data(db_name: str, table_name: str, limit: int = 50, offset: int =
             for cell in row:
                 if cell is None:
                     formatted_row.append(None)
+                elif isinstance(cell, bool):
+                    formatted_row.append(cell)
+                elif isinstance(cell, int):
+                    formatted_row.append(cell)
+                elif isinstance(cell, decimal.Decimal):
+                    formatted_row.append(str(cell))
+                elif isinstance(cell, float):
+                    formatted_row.append(cell)
                 elif isinstance(cell, (datetime.datetime, datetime.date, datetime.time, dt_time)):
                     formatted_row.append(str(cell))
-                elif isinstance(cell, decimal.Decimal):
-                    formatted_row.append(float(cell))
                 elif isinstance(cell, (bytes, memoryview)):
                     formatted_row.append(f"<binary {len(cell)} bytes>")
                 elif isinstance(cell, (dict, list)):
