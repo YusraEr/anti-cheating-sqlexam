@@ -324,7 +324,7 @@ class SaveQuestionRequest(BaseModel):
     question_number: int = Field(ge=1, strict=True)
     title: str
     description: str
-    score_weight: int = 15
+    score_weight: int = Field(default=15, strict=True, ge=1)
     expected_query: Optional[str] = None
     target_database: Optional[str] = "pagila"
     difficulty_level: Optional[str] = "Medium"

@@ -518,7 +518,7 @@
 
                 <div
 
-                    style="margin-bottom: 1.5rem; background: #0f172a; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                    style="margin-bottom: 1.5rem; background: var(--bg-surface); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
 
                     <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Unggah File SQL</h3>
 
@@ -545,7 +545,7 @@
                 </div>
 
                 <!-- Table Data Viewer Section -->
-                <div style="margin-bottom: 1.5rem; background: #0f172a; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="margin-bottom: 1.5rem; background: var(--bg-surface); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
                         <div>
                             <h3 style="font-size: 1rem; margin: 0; color: #f8fafc; display: flex; align-items: center; gap: 0.4rem;">
@@ -735,7 +735,7 @@
 
                     <div
 
-                        style="background: #0f172a; border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
+                        style="background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
 
                         <h3 style="font-size: 1rem; margin-bottom: 0.4rem;">Export CSV</h3>
 
@@ -761,7 +761,7 @@
 
                     <div
 
-                        style="background: #0f172a; border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
+                        style="background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
 
                         <h3 style="font-size: 1rem; margin-bottom: 0.4rem;">Export ZIP</h3>
 
@@ -791,7 +791,7 @@
 
                     <div
 
-                        style="background: #0f172a; border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
+                        style="background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
 
                         <h3 style="font-size: 1rem; margin-bottom: 0.4rem;">Rekap Log (CSV)</h3>
 
@@ -819,7 +819,7 @@
 
                     <div
 
-                        style="background: #0f172a; border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
+                        style="background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
 
                         <h3 style="font-size: 1rem; margin-bottom: 0.4rem;">Rekap Pelanggaran (CSV)</h3>
 
@@ -875,7 +875,7 @@
 
             <div class="modal-body">
 
-                <p style="margin-bottom: 1rem; color: #f1f5f9;">Tindakan ini akan <strong>menghapus seluruh data
+                <p style="margin-bottom: 1rem; color: var(--text-main);">Tindakan ini akan <strong>menghapus seluruh data
 
                         mahasiswa, submisi jawaban, dan sesi</strong> yang tersimpan agar sistem siap digunakan untuk
 
@@ -883,9 +883,9 @@
 
                 <div
 
-                    style="background: #1e293b; border: 1px solid #ef4444; border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem;">
+                    style="background: var(--bg-surface); border: 1px solid #ef4444; border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem;">
 
-                    <p style="color: #fca5a5; font-size: 0.9rem; margin: 0;"><strong>Peringatan:</strong> Data yang
+                    <p style="color: var(--text-main); font-size: 0.9rem; margin: 0;"><strong>Peringatan:</strong> Data yang
 
                         dihapus tidak dapat dikembalikan. Pastikan sudah mengunduh export jawaban sebelum melanjutkan.
 
@@ -941,7 +941,7 @@
 
             <div class="modal-body">
 
-                <p style="margin-bottom: 0.75rem; color: #f1f5f9;">
+                <p style="margin-bottom: 0.75rem; color: var(--text-main);">
 
                     Tindakan ini akan <strong>menghapus seluruh soal ujian</strong> dari bank soal secara permanen.
 
@@ -951,7 +951,7 @@
 
                     style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; padding: 0.75rem; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
 
-                    <p style="font-size: 0.85rem; color: #fca5a5; margin: 0;">
+                    <p style="font-size: 0.85rem; color: var(--text-main); margin: 0;">
 
                         <strong>Peringatan:</strong> Data soal yang dihapus tidak dapat dipulihkan.
 
@@ -1084,10 +1084,17 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="modal-q-expected" class="form-label">Kunci Jawaban Query (Opsional - Sebagai
-                        referensi acuan dosen)</label>
+                    <label for="modal-q-grading-mode" class="form-label">Penilaian</label>
+                    <select id="modal-q-grading-mode" class="form-input">
+                        <option value="automatic">Otomatis</option>
+                        <option value="manual">Manual oleh pengawas</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal-q-expected" class="form-label">Kunci Jawaban SQL (wajib untuk penilaian otomatis)</label>
                     <textarea id="modal-q-expected" class="form-input" rows="2" style="resize: vertical; min-height: 52px; max-height: 140px; font-family: var(--font-mono); font-size: 0.85rem;"
-                        placeholder="SELECT customer_name FROM customers WHERE ...;"></textarea>
+                        placeholder="SELECT customer_name FROM customers WHERE ...;" required></textarea>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin-top: 0.5rem;">
@@ -1164,7 +1171,7 @@
         </form>
     </div>
 
-    <script src="/static/js/admin.js?v=20261110_readiness"></script>
+    <script src="/static/js/admin.js?v=20261112_audit"></script>
 
 
 

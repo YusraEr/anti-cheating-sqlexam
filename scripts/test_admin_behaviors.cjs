@@ -1,6 +1,59 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {environment}=require('./audit_admin_behaviors.cjs');
+
+test('password form reports the server rejection', async () => {
+ const e = environment();
+ e.get('current-master-pw').value = 'wrong-fixture-password';
+ e.get('new-master-pw').value = 'replacement-fixture-key';
+ e.get('confirm-master-pw').value = 'replacement-fixture-key';
+ const detail = 'Password lama atau sesi tidak sesuai.';
+ e.ctx.network = async () => ({ok: false, status: 400, json: async () => ({detail})});
+ await e.ctx.handleChangePassword({preventDefault() {}});
+ assert.equal(e.get('change-pw-alert').textContent, detail);
+});
+
+test('late table reads leave the current result and pagination visible', async () => {
+ const e = environment();
+ const pending = [];
+ e.ctx.network = () => new Promise(resolve => pending.push(resolve));
+ const first = e.run("loadTableData('actor')");
+ const second = e.run("loadTableData('film')");
+ const response = title => ({
+  ok: true,
+  json: async () => ({columns: ['title'], rows: [[title]], total_rows: 1})
+ });
+ pending[1](response('Latest table'));
+ await second;
+ pending[0](response('Old table'));
+ await first;
+ assert.match(e.get('admin-table-data-container').innerHTML, /Latest table/);
+ assert.equal(e.get('admin-table-data-pagination').style.display, 'flex');
+});
+
+test('the question form requires a key in automatic mode and preserves policy options in manual mode', async () => {
+ const e = environment();
+ const fields = {'modal-q-id':'','modal-q-category':'A','modal-q-num':'1','modal-q-title':'Audit',
+  'modal-q-desc':'Fixture','modal-q-weight':'10','modal-q-expected':'','modal-q-target-db':'pagila'};
+ for (const [id, value] of Object.entries(fields)) e.get(id).value = value;
+ let sent;
+ e.ctx.network = async (_, options) => {
+  sent = JSON.parse(options.body);
+  return {ok: true, json: async () => ({status: 'success'})};
+ };
+ e.ctx.closeQuestionModal = () => {};
+ e.ctx.loadQuestionsData = () => {};
+ e.run("setQuestionGradingPolicy({row_order:'ignore'})");
+ await e.ctx.saveQuestionForm({preventDefault() {}});
+ assert.equal(e.get('modal-q-expected').required, true);
+ assert.equal(sent, undefined);
+ e.get('modal-q-grading-mode').value = 'manual';
+ e.run('updateQuestionKeyRequirement()');
+ await e.ctx.saveQuestionForm({preventDefault() {}});
+ assert.equal(e.get('modal-q-expected').required, false);
+ assert.deepEqual(sent.grading_policy, {row_order: 'ignore', mode: 'manual'});
+});
+
 test('untrusted names are data attributes, never inline handlers',async()=>{
  for(const name of ["O'Brien","');window.auditInjected=true;//"]){
   const e=environment();e.ctx.network=async()=>({ok:true,json:async()=>({students:[{nim:'AUDIT',name}]})});

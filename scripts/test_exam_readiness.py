@@ -58,7 +58,8 @@ class ReadinessTests(unittest.TestCase):
             ('UPDATE questions SET expected_query=? WHERE id=?', ('SELECT 2', self.qid)),
             ('UPDATE questions SET grading_policy=? WHERE id=?', ('{"row_order":"ignore"}', self.qid)),
             ('UPDATE questions SET setup_query=? WHERE id=?', ('SELECT 1', self.qid)),
-            ('UPDATE questions SET target_database=? WHERE id=?', ('classicmodels', self.qid)),
+            ("""UPDATE questions SET target_database =
+                CASE WHEN target_database='pagila' THEN 'classicmodels' ELSE 'pagila' END WHERE id=?""", (self.qid,)),
             ("UPDATE questions SET category='B' WHERE id=?", (self.qid,)),
             ("UPDATE exam_packages SET is_active=0 WHERE code='A'", ()),
         ]

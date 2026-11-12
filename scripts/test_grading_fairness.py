@@ -84,6 +84,23 @@ class FairnessTests(unittest.TestCase):
         self.pending(self.grade(base+' ORDER BY n DESC,label DESC LIMIT 1',base+' ORDER BY n DESC LIMIT 1'))
         self.pending(self.grade('SELECT 2::bigint AS n','SELECT count(*) AS n FROM (VALUES(1),(2)) t(n)'))
 
+    def test_limit_grades_clear_mismatches_and_keeps_projected_sort_ties_in_review(self):
+        reference = 'SELECT actor_id FROM actor ORDER BY actor_id LIMIT 2'
+        for answer, status in (
+            ('SELECT actor_id FROM actor WHERE FALSE', 'row_count_mismatch'),
+            ('SELECT actor_id FROM actor ORDER BY actor_id LIMIT 2 OFFSET 2', 'wrong_data'),
+        ):
+            with self.subTest(status=status):
+                result = self.grade(answer, reference)
+                self.assertTrue(result['graded'], result)
+                self.assertEqual(result['score'], 0)
+                self.assertEqual(result['eval_status'], status)
+        base = "SELECT n,label FROM (VALUES (10,'A'),(10,'B')) t(n,label)"
+        outcomes = [self.grade(base + f' ORDER BY n,label {direction} LIMIT 1', base + ' ORDER BY n LIMIT 1')
+                    for direction in ('ASC', 'DESC')]
+        self.assertTrue(any(result['is_correct'] for result in outcomes), outcomes)
+        self.pending(next(result for result in outcomes if not result['is_correct']))
+
     def test_float_tolerance_is_explicit_not_global(self):
         answer='SELECT (0.1::float8+0.2::float8) AS v'
         ref='SELECT 0.3::numeric AS v'

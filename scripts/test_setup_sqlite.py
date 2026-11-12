@@ -29,11 +29,31 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(setup(self.path)['schema_version'],db.SQLITE_SCHEMA_VERSION)
         _,user,_ = db.login_student('SETUP01','Setup Student','testclient','token')
         q = db.get_all_questions()[0]
+        self.assertEqual({item['target_database'] for item in db.get_all_questions()}, {'classicmodels'})
         db.save_submission(user['id'],q['id'],'SELECT 1',1,10,'correct','Saved')
         result = setup(self.path)
         self.assertIsNone(result['backup'])
         self.assertEqual(result['attempts'],1)
         self.assertEqual(db.get_student_submissions(user['id'])[q['id']]['score'],10)
+
+    def test_legacy_seed_target_repair_preserves_edited_questions_and_history(self):
+        setup(self.path)
+        with closing(db.get_sqlite_conn()) as conn, conn:
+            conn.execute("UPDATE questions SET target_database='pagila'")
+            conn.execute("UPDATE questions SET edit_revision=2 WHERE question_number=2")
+        _, user, _ = db.login_student('SETUP02', 'Setup Student', 'testclient', 'token')
+        question = db.get_all_questions()[2]
+        db.save_submission(user['id'], question['id'], 'SELECT 1', 1, 10, 'correct', 'Saved')
+        db.set_exam_state('active')
+        db.init_system_db()
+        self.assertEqual(db.get_all_questions()[0]['target_database'], 'pagila')
+        db.set_exam_state('finished')
+        db.init_system_db()
+        db.init_system_db()
+        questions = db.get_all_questions()
+        self.assertEqual([q['target_database'] for q in questions[:3]], ['classicmodels', 'pagila', 'pagila'])
+        self.assertEqual(questions[0]['question_revision'], 2)
+        self.assertEqual(db.get_student_submissions(user['id'])[question['id']]['score'], 10)
 
     def test_old_version_is_backed_up_before_upgrade(self):
         setup(self.path)

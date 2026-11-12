@@ -496,6 +496,8 @@ def _initialize_system_db(conn: sqlite3.Connection):
             )
             conn.commit()
 
+        repair_default_question_targets(conn)
+
 
 def get_admin_master_key() -> str:
 
@@ -523,9 +525,8 @@ def update_admin_master_key(new_key: str) -> bool:
     return True
 
 
-def seed_default_questions(conn: sqlite3.Connection):
-
-    sample_questions = [
+def _default_questions():
+    return [
 
         (
 
@@ -599,22 +600,29 @@ def seed_default_questions(conn: sqlite3.Connection):
 
     ]
 
-    cur = conn.cursor()
-
-    cur.executemany(
-
-        """
-
-        INSERT INTO questions (question_number, title, description, score_weight, expected_query)
-
-        VALUES (?, ?, ?, ?, ?);
-
-        """,
-
-        sample_questions
-
+def seed_default_questions(conn: sqlite3.Connection):
+    conn.executemany(
+        """INSERT INTO questions
+           (question_number, title, description, score_weight, expected_query, target_database)
+           VALUES (?, ?, ?, ?, ?, 'classicmodels')""",
+        _default_questions(),
     )
 
+
+def repair_default_question_targets(conn: sqlite3.Connection):
+    # Only repair untouched seeds without submission history, outside an active exam.
+    conn.executemany(
+        """UPDATE questions
+           SET target_database = 'classicmodels', reference_validation = 'unvalidated',
+               question_revision = question_revision + 1, edit_revision = edit_revision + 1
+           WHERE question_number = ? AND title = ? AND description = ? AND score_weight = ?
+             AND expected_query = ? AND category = 'A' AND target_database = 'pagila'
+             AND question_revision = 1 AND edit_revision = 1
+             AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key = 'exam_state' AND value = 'active')
+             AND NOT EXISTS (SELECT 1 FROM submissions WHERE question_id = questions.id)
+             AND NOT EXISTS (SELECT 1 FROM submission_attempts WHERE question_id = questions.id)""",
+        _default_questions(),
+    )
 
 
 # ------------------------------------------------------------------------------
@@ -1434,7 +1442,7 @@ def reset_student_category(nim: str) -> Tuple[bool, str]:
 
     cur = conn.cursor()
 
-    cur.execute("UPDATE users SET selected_category = '',grading_revision=grading_revision+1 WHERE nim = ?;", (clean_nim,))
+    cur.execute("UPDATE users SET selected_category = '',grading_revision=grading_revision+1 WHERE LOWER(nim) = LOWER(?);", (clean_nim,))
     if cur.rowcount == 0:
         conn.close()
         raise StudentAccessError("Mahasiswa tidak ditemukan.",404,"student_missing")
@@ -1532,6 +1540,8 @@ def save_question(question_number, title, description, score_weight, expected_qu
     category = (category or "A").strip().upper()
     if isinstance(question_number, bool) or not isinstance(question_number, int) or question_number < 1:
         raise StudentAccessError("Nomor soal harus bilangan bulat positif.", 422, "invalid_question_number")
+    if isinstance(score_weight, bool) or not isinstance(score_weight, int) or score_weight < 1:
+        raise StudentAccessError("Bobot soal harus bilangan bulat positif.", 422, "invalid_score_weight")
     with closing(get_sqlite_conn()) as conn, conn:
         conn.execute("BEGIN IMMEDIATE;")
         state = conn.execute("SELECT value FROM system_settings WHERE key='exam_state'").fetchone()
@@ -1983,12 +1993,12 @@ def get_all_students_progress() -> List[Dict[str, Any]]:
         (
             SELECT COALESCE(SUM(score_weight), 0)
             FROM questions q
-            WHERE q.category = COALESCE(NULLIF(u.selected_category, ''), 'FINAL-A')
+            WHERE q.category = NULLIF(u.selected_category, '') COLLATE NOCASE
         ) AS max_score,
         (
             SELECT COUNT(*)
             FROM questions q
-            WHERE q.category = COALESCE(NULLIF(u.selected_category, ''), 'FINAL-A')
+            WHERE q.category = NULLIF(u.selected_category, '') COLLATE NOCASE
         ) AS total_questions,
         (
             SELECT COUNT(*)
@@ -1996,7 +2006,10 @@ def get_all_students_progress() -> List[Dict[str, Any]]:
             WHERE l.user_id = u.id AND l.action_type = 'blur_tab'
         ) AS tab_switches
     FROM users u
-    LEFT JOIN submissions s ON u.id = s.user_id
+    LEFT JOIN submissions s ON u.id = s.user_id AND s.question_id IN (
+        SELECT q.id FROM questions q
+        WHERE q.category = NULLIF(u.selected_category, '') COLLATE NOCASE
+    )
     GROUP BY u.id
     ORDER BY total_score DESC, u.nim ASC;
     """
@@ -2196,38 +2209,27 @@ def export_submissions_zip_bytes() -> bytes:
             user_id = u["id"]
             nim = u["nim"]
             name = re.sub(r'[^a-zA-Z0-9_-]', '_', u["name"])
-            category = u["selected_category"] or "FINAL-A"
+            category = u["selected_category"] or ""
+            package_label = category or "Belum memilih paket"
 
             cur.execute(
                 """
-                SELECT q.question_number, q.title, q.score_weight, s.submitted_query, s.submitted_at, s.score, s.is_correct
+                SELECT q.id, q.question_number, q.title, q.score_weight, s.submitted_query, s.submitted_at, s.score, s.is_correct
                 FROM questions q
                 LEFT JOIN submissions s ON q.id = s.question_id AND s.user_id = ?
-                WHERE q.category = ?
+                WHERE q.category = NULLIF(?, '') COLLATE NOCASE
                 ORDER BY q.question_number ASC;
                 """,
                 (user_id, category)
             )
             q_rows = cur.fetchall()
 
-            if not q_rows:
-                cur.execute(
-                    """
-                    SELECT q.question_number, q.title, q.score_weight, s.submitted_query, s.submitted_at, s.score, s.is_correct
-                    FROM questions q
-                    LEFT JOIN submissions s ON q.id = s.question_id AND s.user_id = ?
-                    ORDER BY q.question_number ASC;
-                    """,
-                    (user_id,)
-                )
-                q_rows = cur.fetchall()
-
             q_rows = [dict(row) for row in q_rows]
             for qr in q_rows:
                 if qr['submitted_query'] is None:
-                    latest = conn.execute('''SELECT a.* FROM submission_attempts a JOIN questions q ON q.id=a.question_id
-                        WHERE a.user_id=? AND q.question_number=? AND q.category=? ORDER BY a.id DESC LIMIT 1''',
-                        (user_id, qr['question_number'], category)).fetchone()
+                    latest = conn.execute('''SELECT * FROM submission_attempts
+                        WHERE user_id=? AND question_id=? ORDER BY id DESC LIMIT 1''',
+                        (user_id, qr['id'])).fetchone()
                     if latest:
                         qr.update(submitted_query=latest['submitted_query'], submitted_at=latest['submitted_at'], pending=True)
             user_total_score = sum((qr["score"] or 0) for qr in q_rows)
@@ -2240,7 +2242,7 @@ def export_submissions_zip_bytes() -> bytes:
                 "nim": nim,
                 "name": u["name"],
                 "ip_address": u["ip_address"] or "-",
-                "category": category,
+                "category": package_label,
                 "total_score": user_total_score,
                 "max_score": user_max_score,
                 "correct_count": user_correct_count,
@@ -2253,7 +2255,7 @@ def export_submissions_zip_bytes() -> bytes:
                 f"-- LEMBAR JAWABAN UJIAN PRAKTIKUM BASIS DATA",
                 f"-- NIM           : {nim}",
                 f"-- Nama          : {u['name']}",
-                f"-- Paket Soal    : {category}",
+                f"-- Paket Soal    : {package_label}",
                 f"-- Total Nilai   : {user_total_score} / {user_max_score} Poin ({pct}%)",
                 f"-- Jawaban Benar : {user_correct_count} dari {total_q} Soal",
                 f"-- Diekspor pada : {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",

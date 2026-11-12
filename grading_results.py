@@ -171,7 +171,8 @@ def tolerant_bag_equal(reference, student, policy, check, order_keys=None):
     return True
 
 
-def compare_complete(reference, student, policy, ordered, check=lambda: None, preview=None, order_keys=None):
+def compare_complete(reference, student, policy, ordered, check=lambda: None, preview=None, order_keys=None,
+                     limited=False):
     """Inputs are iterables of native PostgreSQL rows; exact bags spill to a private file."""
     tolerant = bool(policy.numeric_absolute_tolerance or policy.numeric_relative_tolerance)
     reference_saved, student_saved = [], []
@@ -228,6 +229,9 @@ def compare_complete(reference, student, policy, ordered, check=lambda: None, pr
                 equal = conn.execute("SELECT 1 FROM differences WHERE count<>0 LIMIT 1").fetchone() is None
             if ordered and equal:
                 return (True, "correct", counts[1]) if order_keys_equal else (False, "wrong_order", counts[1])
+            # A limited slice can select different rows tied on the same sort keys.
+            if not equal and limited and (not order_keys or order_keys_equal or tolerant):
+                return False, "manual_review", counts[1]
             return equal, "correct" if equal else "wrong_data", counts[1]
         finally:
             conn.close()

@@ -27,6 +27,7 @@ def run_step(title, command):
 
 
 def main():
+    sys.stdout.reconfigure(errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sqlite-only", action="store_true",
                         help="Run migration checks without PostgreSQL; not the full regression suite.")

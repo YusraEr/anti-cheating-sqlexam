@@ -183,6 +183,7 @@ loadWaitingRoomPanel();
     });
 
     document.getElementById("modal-q-category")?.addEventListener("change", updateNextQuestionNumber);
+    document.getElementById("modal-q-grading-mode")?.addEventListener("change", updateQuestionKeyRequirement);
 
     document.getElementById("btn-delete-all-questions")?.addEventListener("click", openDeleteAllQuestionsModal);
 
@@ -240,48 +241,6 @@ loadWaitingRoomPanel();
     });
 
     document.getElementById("btn-clear-logs")?.addEventListener("click", confirmClearLogs);
-
-    document.getElementById("btn-export-csv")?.addEventListener("click", () => {
-
-        window.location.href = "/api/admin/export/csv";
-
-    });
-
-    document.getElementById("btn-export-zip")?.addEventListener("click", () => {
-
-        window.location.href = "/api/admin/export/zip";
-
-    });
-
-
-
-    // Export Rekap Log Aktivitas
-
-    const downloadLogs = () => {
-
-        window.location.href = "/api/admin/export/logs-csv";
-
-    };
-
-    document.getElementById("btn-download-logs-tab4")?.addEventListener("click", downloadLogs);
-
-    document.getElementById("btn-export-logs-csv")?.addEventListener("click", downloadLogs);
-
-
-
-    // Export Rekap Perpindahan Tab
-
-    const downloadTabSwitches = () => {
-
-        window.location.href = "/api/admin/export/tab-switches-csv";
-
-    };
-
-    document.getElementById("btn-download-tab-switches-tab4")?.addEventListener("click", downloadTabSwitches);
-
-    document.getElementById("btn-export-tab-switches-csv")?.addEventListener("click", downloadTabSwitches);
-
-
 
     // Custom SQL Upload Form
 
@@ -674,7 +633,7 @@ async function loadDashboardData() {
 
 
             const scoreVal = s.total_score || 0;
-            const maxScore = s.max_score || (s.total_questions ? s.total_questions * 10 : 40);
+            const maxScore = s.max_score ?? 0;
             const scorePct = maxScore > 0 ? (scoreVal / maxScore * 100) : 0;
             const scoreColor = scorePct >= 80 ? "#10b981" : (scoreVal > 0 ? "#f59e0b" : "#94a3b8");
             const scoreBadge = `<div style="display: inline-flex; align-items: baseline; gap: 4px; font-weight: 700; white-space: nowrap;">
@@ -764,7 +723,7 @@ async function resetStudentCategory(nim, name) {
 
         console.error("Reset category error:", err);
 
-        showToast("Gagal menghubungi server untuk reset paket soal.", "danger");
+        showToast(err.status ? err.message : "Gagal menghubungi server untuk reset paket soal.", "danger");
 
     }
 
@@ -790,7 +749,7 @@ async function clearStudentSessionLock(nim, name) {
             showToast(data.detail || data.message || "Gagal membebaskan kunci sesi mahasiswa.", "danger");
         }
     } catch (err) {
-        showToast("Gagal membebaskan sesi mahasiswa.", "danger");
+        showToast(err.status ? err.message : "Gagal membebaskan sesi mahasiswa.", "danger");
     }
 }
 
@@ -822,7 +781,7 @@ async function confirmStopAllSessions() {
 
     } catch (err) {
 
-        showToast("Gagal menghentikan semua sesi.", "danger");
+        showToast(err.status ? err.message : "Gagal menghentikan semua sesi.", "danger");
 
     } finally {
 
@@ -880,7 +839,7 @@ async function executeClearSessions() {
 
     } catch (err) {
 
-        showToast("Gagal membersihkan sesi.", "danger");
+        showToast(err.status ? err.message : "Gagal membersihkan sesi.", "danger");
 
     } finally {
 
@@ -916,7 +875,7 @@ async function confirmClearLogs() {
 
     } catch (err) {
 
-        showToast("Gagal membersihkan log.", "danger");
+        showToast(err.status ? err.message : "Gagal membersihkan log.", "danger");
 
     } finally {
 
@@ -1482,7 +1441,7 @@ async function confirmDeletePackage(code, totalQuestions, totalStudents) {
 
         console.error("Delete package error:", err);
 
-        showToast("Gagal menghubungi server untuk menghapus paket soal.", "danger");
+        showToast(err.status ? err.message : "Gagal menghubungi server untuk menghapus paket soal.", "danger");
 
     }
 
@@ -1608,6 +1567,20 @@ function updateNextQuestionNumber() {
 }
 
 
+let currentQuestionGradingPolicy = {};
+
+function updateQuestionKeyRequirement() {
+    const key = document.getElementById("modal-q-expected");
+    if (key) key.required = document.getElementById("modal-q-grading-mode")?.value !== "manual";
+}
+
+function setQuestionGradingPolicy(policy) {
+    currentQuestionGradingPolicy = policy;
+    const mode = document.getElementById("modal-q-grading-mode");
+    if (mode) mode.value = policy.mode === "manual" ? "manual" : "automatic";
+    updateQuestionKeyRequirement();
+}
+
 function openAddQuestionModal() {
 
     document.getElementById("q-modal-title").textContent = "Tambah Soal Ujian Baru";
@@ -1644,6 +1617,7 @@ function openAddQuestionModal() {
     document.getElementById("modal-q-weight").value = "15";
 
     document.getElementById("modal-q-expected").value = "";
+    setQuestionGradingPolicy({});
 
     const targetDbEl = document.getElementById("modal-q-target-db");
 
@@ -1699,6 +1673,7 @@ function openEditQuestionModal(qId) {
     document.getElementById("modal-q-weight").value = q.score_weight;
 
     document.getElementById("modal-q-expected").value = q.expected_query || "";
+    setQuestionGradingPolicy(typeof q.grading_policy === "string" ? JSON.parse(q.grading_policy) : q.grading_policy || {});
 
     const targetDbEl = document.getElementById("modal-q-target-db");
 
@@ -1771,9 +1746,14 @@ async function saveQuestionForm(e) {
 
         description: document.getElementById("modal-q-desc").value.trim(),
 
-        score_weight: parseInt(document.getElementById("modal-q-weight").value),
+        score_weight: Number(document.getElementById("modal-q-weight").value),
 
         expected_query: document.getElementById("modal-q-expected").value.trim(),
+
+        grading_policy: {
+            ...currentQuestionGradingPolicy,
+            mode: document.getElementById("modal-q-grading-mode")?.value === "manual" ? "manual" : "automatic"
+        },
 
         target_database: document.getElementById("modal-q-target-db")?.value || "pagila",
 
@@ -1793,6 +1773,15 @@ async function saveQuestionForm(e) {
 
         return;
 
+    }
+
+    if (!Number.isInteger(payload.score_weight) || payload.score_weight < 1) {
+        showToast("Bobot soal harus bilangan bulat positif.", "warning");
+        return;
+    }
+    if (payload.grading_policy.mode === "automatic" && !payload.expected_query) {
+        showToast("Kunci jawaban SQL wajib diisi untuk penilaian otomatis.", "warning");
+        return;
     }
 
 
@@ -1851,7 +1840,7 @@ async function deleteQuestion(qId) {
 
     } catch (err) {
 
-        showToast("Gagal menghapus soal.", "danger");
+        showToast(err.status ? err.message : "Gagal menghapus soal.", "danger");
 
     }
 
@@ -1891,7 +1880,7 @@ async function deleteAllQuestions() {
 
     } catch (err) {
 
-        showToast("Gagal menghapus semua soal.", "danger");
+        showToast(err.status ? err.message : "Gagal menghapus semua soal.", "danger");
 
     }
 
@@ -1941,10 +1930,13 @@ window.clearStudentSessionLock = clearStudentSessionLock;
 
 let currentViewingTable = "";
 let currentTableDataPage = 1;
+let schemaViewRequest = 0;
+let tableViewRequest = 0;
 
 async function loadSchemaPreview(targetDb) {
     const container = document.getElementById("db-schema-preview");
     if (!container) return;
+    const request = ++schemaViewRequest;
 
     const dbSelector = document.getElementById("admin-db-selector");
     const currentDb = (targetDb || (dbSelector ? dbSelector.value : "pagila") || "pagila").toLowerCase();
@@ -1968,6 +1960,7 @@ async function loadSchemaPreview(targetDb) {
     try {
         const res = await fetch(`/api/admin/schema?db=${encodeURIComponent(currentDb)}`);
         const data = await res.json();
+        if (request !== schemaViewRequest) return;
         const schema = data.schema || {};
         const tables = Object.keys(schema);
 
@@ -2013,7 +2006,7 @@ async function loadSchemaPreview(targetDb) {
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
                         ${cols.map(c => `
-                            <span style="font-size: 0.75rem; background: #1e293b; padding: 0.15rem 0.45rem; border-radius: 3px; font-family: var(--font-mono); color: ${c.pk ? '#f59e0b' : '#cbd5e1'};">
+                            <span style="font-size: 0.75rem; background: var(--bg-surface-elevated); padding: 0.15rem 0.45rem; border-radius: 3px; font-family: var(--font-mono); color: var(--text-main);">
                                 ${c.pk ? '[PK] ' : ''}${escapeHtml(c.name)} (${escapeHtml(c.type)})
                             </span>
                         `).join("")}
@@ -2034,17 +2027,21 @@ async function loadSchemaPreview(targetDb) {
         });
 
     } catch (err) {
+        if (request !== schemaViewRequest) return;
         container.innerHTML = `<p style="color: #ef4444;">Gagal memuat preview skema database '${escapeHtml(currentDb)}'.</p>`;
     }
 }
 
 async function loadTableData(tableName, page = 1) {
     if (!tableName) return;
+    const request = ++tableViewRequest;
     currentViewingTable = tableName;
     currentTableDataPage = page;
 
     const dbSelector = document.getElementById("admin-db-selector");
     const currentDb = ((dbSelector ? dbSelector.value : "pagila") || "pagila").toLowerCase();
+    const isCurrentView = () => request === tableViewRequest &&
+        ((dbSelector?.value || "pagila").toLowerCase() === currentDb);
 
     const limitSelect = document.getElementById("admin-table-data-limit");
     const limit = parseInt(limitSelect ? limitSelect.value : "25", 10) || 25;
@@ -2067,6 +2064,7 @@ async function loadTableData(tableName, page = 1) {
             throw new Error(errData.detail || "Gagal mengambil data tabel");
         }
         const data = await res.json();
+        if (!isCurrentView()) return;
         const columns = data.columns || [];
         const rows = data.rows || [];
         const totalRows = typeof data.total_rows === "number" ? data.total_rows : rows.length;
@@ -2081,7 +2079,7 @@ async function loadTableData(tableName, page = 1) {
         // Render HTML Table with sticky header
         let html = `
             <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
-                <thead style="position: sticky; top: 0; background: #1e293b; z-index: 2;">
+                <thead style="position: sticky; top: 0; background: var(--bg-surface-elevated); z-index: 2;">
                     <tr>
                         <th style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-subtle); color: #94a3b8; text-align: center; width: 40px;">#</th>
                         ${columns.map(c => `<th style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-subtle); color: #38bdf8; text-align: left; font-family: var(--font-mono);">${escapeHtml(c)}</th>`).join("")}
@@ -2117,6 +2115,7 @@ async function loadTableData(tableName, page = 1) {
         }
 
     } catch (err) {
+        if (!isCurrentView()) return;
         container.innerHTML = `<p style="color: #ef4444; padding: 1.5rem; text-align: center;">Error: ${escapeHtml(err.message)}</p>`;
         if (paginationBar) paginationBar.style.display = "none";
     }
@@ -2174,7 +2173,7 @@ async function confirmResetDatabase() {
 
     } catch (err) {
 
-        showToast("Error saat menghubungi server untuk reset database.", "danger");
+        showToast(err.status ? err.message : "Error saat menghubungi server untuk reset database.", "danger");
 
     } finally {
 
@@ -2258,7 +2257,7 @@ async function handleSqlUpload(e) {
 
     } catch (err) {
 
-        showToast("Error saat mengunggah file SQL.", "danger");
+        showToast(err.status ? err.message : "Error saat mengunggah file SQL.", "danger");
 
     } finally {
 
@@ -2322,7 +2321,7 @@ async function loadLogsData(page = 1) {
                     <td><strong>${escapeHtml(l.nim || "Sistem")}</strong></td>
                     <td>${escapeHtml(l.name || "-")}</td>
                     <td><span class="status-badge ${badgeClass}">${escapeHtml(l.action_type)}</span></td>
-                    <td style="font-size: 0.85rem; color: #cbd5e1;">${escapeHtml(l.details || "-")}</td>
+                    <td style="font-size: 0.85rem; color: var(--text-main);">${escapeHtml(l.details || "-")}</td>
                 </tr>
             `;
         });
@@ -2553,7 +2552,7 @@ async function handleChangePassword(e) {
 
     } catch (err) {
 
-        showAlert("Terjadi kesalahan jaringan.");
+        showAlert(err.status ? err.message : "Terjadi kesalahan jaringan.");
 
     } finally {
 

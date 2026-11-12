@@ -74,6 +74,7 @@ class SystemMigrationTests(unittest.TestCase):
         ok, user, _ = database.login_student("FRESH001", "Fresh Student", "testclient", "fresh-token")
         self.assertTrue(ok)
         question = database.get_all_questions()[0]
+        database.lock_student_category("FRESH001", question["category"])
         result = database.save_submission(user["id"], question["id"], "SELECT 1;", 1, 10, "correct", "Saved")
         self.assertEqual(result["score"], 10)
         submissions = database.get_student_submissions(user["id"])

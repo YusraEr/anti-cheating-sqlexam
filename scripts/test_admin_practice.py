@@ -44,7 +44,7 @@ class AdminPracticeTests(unittest.TestCase):
             db.set_exam_state(state)
             page=self.client.get('/admin/practice')
             self.assertEqual(page.status_code,200)
-            self.assertIn('student.js?v=20261108_practice',page.text)
+            self.assertRegex(page.text, r'src="/static/js/student\.js(?:\?v=[^"]+)?"')
             self.assertIn('id="btn-enter-fullscreen"',page.text)
             self.assertEqual(db.get_exam_state(),state)
 

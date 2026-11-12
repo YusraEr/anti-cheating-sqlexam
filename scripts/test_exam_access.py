@@ -20,6 +20,34 @@ from starlette.requests import Request
 
 
 class ExamAccessTests(unittest.TestCase):
+    def test_reset_package_scopes_live_score_and_zip_but_preserves_archive(self):
+        import csv, io, zipfile
+
+        database.set_exam_state('finished')
+        second_question = database.save_question(1, 'Package B', 'Fixture', 20, 'SELECT 2', category='B')
+        database.set_exam_state('active')
+        database.save_submission(self.user['id'], self.qid, 'SELECT 1', 1, 15, 'correct', 'Saved')
+        self.assertEqual(self.client.post('/api/admin/student/access01/reset-category').status_code, 200)
+
+        def export_summary():
+            with zipfile.ZipFile(io.BytesIO(database.export_submissions_zip_bytes())) as archive:
+                summary = next(csv.DictReader(io.StringIO(archive.read('rekap_nilai_ujian.csv').decode('utf-8-sig'))))
+                attempts = list(csv.DictReader(io.StringIO(archive.read('arsip_seluruh_percobaan.csv').decode('utf-8-sig'))))
+                return summary, attempts
+
+        row = database.get_all_students_progress()[0]
+        self.assertEqual((row['total_score'], row['max_score'], row['total_submitted']), (0, 0, 0))
+        summary, _ = export_summary()
+        self.assertEqual((summary['Paket Soal'], summary['Skor Maksimal']), ('Belum memilih paket', '0'))
+
+        database.lock_student_category('ACCESS01', 'B')
+        database.save_submission(self.user['id'], second_question, 'SELECT 2', 1, 20, 'correct', 'Saved')
+        row = database.get_all_students_progress()[0]
+        self.assertEqual((row['total_score'], row['max_score'], row['total_submitted']), (20, 20, 1))
+        summary, attempts = export_summary()
+        self.assertEqual((summary['Paket Soal'], summary['Total Skor'], summary['Skor Maksimal']), ('B', '20', '20'))
+        self.assertEqual({r['Query Jawaban'] for r in attempts if r['Jenis Rekaman'] == 'PERCOBAAN'}, {'SELECT 1', 'SELECT 2'})
+
     def test_pending_first_answer_is_in_csv_and_zip(self):
         import csv, io, zipfile
         review={**self.grade,'graded':False,'is_correct':None,'score':None,'eval_status':'manual_review'}

@@ -166,16 +166,17 @@ def compare_query(reference, student, ref_query, stud_query, policy, source=None
             raise GradingLimitError("Hasil melebihi 64 kolom evaluator.")
         if mapping is None:
             return False, "column_mismatch", None
-        ordered = policy.row_order == "required" or (policy.row_order == "auto" and bool(parse_sql(ref_query)[0].stmt.sortClause))
+        tree = parse_sql(ref_query)[0].stmt()
+        ordered = policy.row_order == "required" or (policy.row_order == "auto" and bool(tree.get("sortClause")))
+        order_keys = projected_order_keys(ref_query, ref_columns) if ordered else None
+        limited = bool(tree.get("limitCount") or tree.get("limitOffset"))
         preview, collect = preview_collector([stud_columns[i] for i in mapping])
         student_rows = ((tuple(row[index] for index in mapping)) for row in student.rows(actual))
         correct, status, count = compare_complete(reference_rows(reference, ref), student_rows, policy, ordered,
-                                                 reference.check, collect, order_keys=projected_order_keys(ref_query,ref_columns) if ordered else None)
+                                                 reference.check, collect, order_keys=order_keys, limited=limited)
         preview["row_count"] = count
-        if not correct:
-            tree=parse_sql(ref_query)[0].stmt()
-            if (status=='wrong_order' and projected_order_keys(ref_query,ref_columns) is None) or tree.get('limitCount') or tree.get('limitOffset'):
-                status='manual_review'
+        if status == "wrong_order" and order_keys is None:
+            status = "manual_review"
         return correct, status, preview
 
 

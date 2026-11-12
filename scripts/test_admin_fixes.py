@@ -51,6 +51,21 @@ class AdminFixTests(unittest.TestCase):
             headers={'content-type':'multipart/form-data; boundary=x'})
         self.assertEqual(response.status_code,403)
 
+    def test_question_rejects_invalid_weights_and_accepts_manual_without_key(self):
+        db.set_exam_state('waiting')
+        payload = {'question_number': 999, 'category': 'A', 'title': 'Audit', 'description': 'Fixture',
+                   'score_weight': 10, 'expected_query': 'SELECT 1'}
+        for weight in (0, -5, 1.5, True):
+            with self.subTest(weight=weight):
+                response = self.client.post('/api/admin/questions', json={**payload, 'score_weight': weight})
+                self.assertEqual(response.status_code, 422, response.text)
+                self.assertEqual(response.json()['detail'][0]['loc'], ['body', 'score_weight'])
+        empty = self.client.post('/api/admin/questions', json={**payload, 'expected_query': ''})
+        self.assertEqual(empty.status_code, 400)
+        manual = self.client.post('/api/admin/questions', json={**payload, 'expected_query': '',
+                                                              'grading_policy': {'mode': 'manual'}})
+        self.assertEqual(manual.status_code, 200, manual.text)
+
     def test_question_validation_reports_sql_field_and_preserves_data(self):
         db.set_exam_state('waiting')
         payload={'question_number':999,'category':'A','title':'Validation test','description':'Validation fixture',
